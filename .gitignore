@@ -1,0 +1,23 @@
+# Credentials — NEVER commit these
+DASHBOARD_SETUP_INSTRUCTIONS.md
+creds.json
+google-ads.yaml
+zoho_tokens.json
+zoho_campaigns_tokens.json
+snov_tokens.json
+
+# Generated data
+dashboard_data.json
+ga4_data.json
+ga4_fresh.json
+gads_data.json
+gads_fresh.json
+zoho_data.json
+zoho_fresh.json
+snov_data.json
+snov_fresh.json
+
+# Python
+__pycache__/
+*.pyc
+.env
