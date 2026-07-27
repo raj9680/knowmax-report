@@ -4,1589 +4,190 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Knowmax Marketing Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <style>
-  :root {
-    --bg: #0f1117; --card: #1a1d27; --card-hover: #222632; --border: #2a2e3b;
-    --text: #e4e6eb; --text-muted: #8b8fa3;
-    --accent: #6366f1; --accent-light: #818cf8;
-    --green: #22c55e; --green-bg: rgba(34,197,94,0.12);
-    --red: #ef4444; --red-bg: rgba(239,68,68,0.12);
-    --yellow: #eab308; --yellow-bg: rgba(234,179,8,0.12);
-    --blue: #3b82f6; --blue-bg: rgba(59,130,246,0.12);
-    --purple: #a855f7; --orange: #f97316; --cyan: #06b6d4; --pink: #ec4899;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; padding: 24px; min-height: 100vh; }
-  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; flex-wrap: wrap; gap: 16px; }
-  .header h1 { font-size: 26px; font-weight: 700; background: linear-gradient(135deg, var(--accent-light), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .date-range { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; color: var(--text); font-size: 13px; cursor: pointer; min-width: 180px; }
-  .date-range optgroup { color: var(--text-muted); font-size: 12px; }
-  .date-range option { color: var(--text); background: var(--card); padding: 4px; }
-  .section-title { font-size: 16px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; margin: 32px 0 16px 0; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
-  details.collapsible-section { margin-bottom: 0; }
-  details.collapsible-section > summary { font-size: 16px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; margin: 32px 0 16px 0; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; user-select: none; }
-  details.collapsible-section > summary::-webkit-details-marker { display: none; }
-  details.collapsible-section > summary::before { content: '+'; display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; font-size: 16px; font-weight: 700; background: var(--card); border: 1px solid var(--border); color: var(--text-muted); transition: all 0.2s; flex-shrink: 0; }
-  details.collapsible-section[open] > summary::before { content: '\2212'; background: var(--accent); color: #fff; border-color: var(--accent); }
-  details.collapsible-section > .section-body { animation: slideDown 0.3s ease; }
-  @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-  details.collapsible-widget { margin-bottom: 0; }
-  details.collapsible-widget > summary { font-size: 14px; font-weight: 600; color: var(--text); padding: 14px 20px; cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; }
-  details.collapsible-widget > summary::-webkit-details-marker { display: none; }
-  details.collapsible-widget > summary::after { content: '\25BC'; font-size: 10px; color: var(--text-muted); margin-left: auto; transition: transform 0.2s; }
-  details.collapsible-widget[open] > summary::after { transform: rotate(180deg); }
-  details.collapsible-widget > .widget-body { padding: 0 20px 20px; animation: fadeIn 0.2s ease; }
-  .expand-controls { display: flex; gap: 8px; margin-left: auto; }
-  .expand-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); color: var(--text-muted); font-size: 11px; cursor: pointer; transition: all 0.2s; }
-  .expand-btn:hover { background: var(--card-hover); color: var(--text); }
-  .currency-toggle { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; padding: 4px 10px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--text); }
-  .currency-toggle:hover { background: var(--card-hover); }
-  .toggle-track { width: 36px; height: 20px; border-radius: 10px; background: var(--border); position: relative; transition: background 0.2s; }
-  .toggle-track.active { background: var(--accent); }
-  .toggle-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; position: absolute; top: 2px; left: 2px; transition: left 0.2s; }
-  .toggle-track.active .toggle-thumb { left: 18px; }
-  .section-icon { width: 20px; height: 20px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; }
-  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 8px; }
-  .kpi-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; transition: all 0.2s; position: relative; overflow: hidden; }
-  .kpi-card:hover { background: var(--card-hover); transform: translateY(-1px); }
-  .kpi-card .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-  .kpi-card .value { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
-  .kpi-card .change { font-size: 11px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 20px; }
-  .change.up { color: var(--green); background: var(--green-bg); }
-  .change.down { color: var(--red); background: var(--red-bg); }
-  .change.flat { color: var(--yellow); background: var(--yellow-bg); }
-  .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 16px; margin-bottom: 8px; }
-  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
-  .chart-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--text); }
-  .chart-container { position: relative; height: 260px; }
-  .chart-container.tall { height: 320px; }
-  .table-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; overflow-x: auto; }
-  .table-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { text-align: left; padding: 10px 12px; color: var(--text-muted); font-weight: 500; border-bottom: 1px solid var(--border); white-space: nowrap; }
-  td { padding: 10px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--card-hover); }
-  tr.subtotal td { font-weight: 700; background: rgba(99,102,241,0.06); }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
-  .badge-green { background: var(--green-bg); color: var(--green); }
-  .badge-red { background: var(--red-bg); color: var(--red); }
-  .badge-yellow { background: var(--yellow-bg); color: var(--yellow); }
-  .badge-blue { background: var(--blue-bg); color: var(--blue); }
-  .badge-purple { background: rgba(168,85,247,0.12); color: var(--purple); }
-  .progress-bar { width: 100%; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 4px; }
-  .progress-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
-  .spend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-  .spend-item { background: var(--card-hover); border-radius: 8px; padding: 14px; }
-  .spend-item .s-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-  .spend-item .s-value { font-size: 22px; font-weight: 700; margin: 4px 0; }
-  .spend-item .s-pct { font-size: 11px; color: var(--text-muted); }
-  .full-width { grid-column: 1 / -1; }
-  .summary-strip { display: flex; gap: 24px; padding: 14px 20px; background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(6,182,212,0.08)); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 24px; flex-wrap: wrap; }
-  .summary-item { display: flex; align-items: center; gap: 10px; }
-  .summary-item .s-dot { width: 8px; height: 8px; border-radius: 50%; }
-  .summary-item .s-num { font-size: 18px; font-weight: 700; }
-  .summary-item .s-lbl { font-size: 12px; color: var(--text-muted); }
-  .hl-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 8px; }
-  .hl-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
-  .hl-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
-  .hl-card ul { list-style: none; padding: 0; }
-  .hl-card ul li { padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
-  .hl-card ul li:last-child { border-bottom: none; }
-  .hl-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-  .dve-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-  .dve-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
-  .dve-card h4 { font-size: 13px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-  .dve-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
-  .dve-row:last-child { border-bottom: none; }
-  .dve-row .dve-label { color: var(--text-muted); }
-  .dve-row .dve-val { font-weight: 600; }
-  .spend-total-strip { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: linear-gradient(135deg, rgba(239,68,68,0.06), rgba(249,115,22,0.06)); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
-  .spend-total-strip .total-label { font-size: 13px; color: var(--text-muted); }
-  .spend-total-strip .total-value { font-size: 28px; font-weight: 700; color: var(--orange); }
-  .spend-total-strip .budget-info { font-size: 12px; color: var(--text-muted); }
-  .period-tabs { display: flex; gap: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 3px; flex-wrap: wrap; }
-  .period-tab { padding: 6px 14px; border-radius: 6px; border: none; background: none; color: var(--text-muted); font-size: 13px; cursor: pointer; transition: all 0.2s; }
-  .period-tab.active { background: var(--accent); color: #fff; }
-  .compare-panel { animation: fadeIn 0.3s ease; }
-  .score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 16px; }
-  .score-card { background: var(--card-hover); border-radius: 8px; padding: 12px; text-align: center; }
-  .score-card .score-val { font-size: 24px; font-weight: 700; }
-  .score-card .score-lbl { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
-  .initiative-list { list-style: none; padding: 0; }
-  .initiative-list li { padding: 10px 14px; margin-bottom: 6px; background: var(--card-hover); border-radius: 8px; font-size: 13px; display: flex; align-items: center; gap: 10px; }
-  .initiative-list li .init-status { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  @media (max-width: 900px) { .chart-grid, .hl-grid, .dve-grid { grid-template-columns: 1fr; } }
-  @media (max-width: 768px) { body { padding: 12px; } .kpi-grid { grid-template-columns: repeat(2, 1fr); } .header h1 { font-size: 20px; } }
+:root{--bg:#0f172a;--card:#1e293b;--card2:#243447;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;
+--accent:#38bdf8;--green:#4ade80;--red:#f87171;--yellow:#fbbf24;--purple:#a78bfa;--orange:#fb923c}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;padding:24px}
+h1{font-size:24px;margin-bottom:4px}
+.sub{color:var(--muted);font-size:13px;margin-bottom:24px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:28px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+.kpi .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.kpi .value{font-size:26px;font-weight:700;margin:6px 0 2px}
+.kpi .delta{font-size:12px}
+.up{color:var(--green)}.down{color:var(--red)}.neutral{color:var(--muted)}
+.tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.tab{background:var(--card);border:1px solid var(--border);color:var(--muted);padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600}
+.tab.active{background:var(--accent);color:#0f172a;border-color:var(--accent)}
+.panel{display:none}.panel.active{display:block}
+.row{display:grid;gap:16px;margin-bottom:16px}
+.row.two{grid-template-columns:1fr 1fr}.row.three{grid-template-columns:2fr 1fr 1fr}
+@media(max-width:900px){.row.two,.row.three{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px}
+.card h3{font-size:14px;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px}
+.chart-box{position:relative;height:300px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border);text-transform:uppercase;font-size:11px;letter-spacing:.5px}
+td{padding:8px 10px;border-bottom:1px solid #24334a}
+td.num,th.num{text-align:right}
+tr:hover td{background:var(--card2)}
+a{color:var(--accent);text-decoration:none}
+.note{color:var(--muted);font-size:12px;margin-top:8px;font-style:italic}
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;background:var(--card2);color:var(--muted)}
 </style>
 </head>
 <body>
-
-<!-- HEADER -->
-<div class="header">
-  <h1>Knowmax Marketing Dashboard</h1>
-  <div class="header-right">
-    <div class="expand-controls">
-      <button class="expand-btn" onclick="toggleAllSections(true)">Expand All</button>
-      <button class="expand-btn" onclick="toggleAllSections(false)">Collapse All</button>
-    </div>
-    <div class="currency-toggle" onclick="toggleCurrency()">
-      <span id="currLabel">USD $</span>
-      <div class="toggle-track" id="currToggle"><div class="toggle-thumb"></div></div>
-      <span id="currLabelAlt">INR &#x20B9;</span>
-      <span id="currRate" style="font-size:10px;color:var(--text-muted);margin-left:4px"></span>
-    </div>
-    <select class="date-range" id="periodSelect" onchange="onPeriodChange(this)">
-      <optgroup label="Quick">
-        <option value="this_week">This Week</option>
-        <option value="this_month" selected>This Month</option>
-        <option value="this_quarter">This Quarter</option>
-        <option value="fy">FY 25-26</option>
-      </optgroup>
-      <optgroup label="Months">
-        <option value="mar26">March 2026</option><option value="feb26">February 2026</option>
-        <option value="jan26">January 2026</option><option value="dec25">December 2025</option>
-        <option value="nov25">November 2025</option><option value="oct25">October 2025</option>
-        <option value="sep25">September 2025</option><option value="aug25">August 2025</option>
-        <option value="jul25">July 2025</option><option value="jun25">June 2025</option>
-        <option value="may25">May 2025</option><option value="apr25">April 2025</option>
-      </optgroup>
-      <optgroup label="Quarters">
-        <option value="q4_jfm">Q4 FY26 (Jan-Mar)</option><option value="q3_ond">Q3 FY26 (Oct-Dec)</option>
-        <option value="q2_jas">Q2 FY26 (Jul-Sep)</option><option value="q1_amj">Q1 FY26 (Apr-Jun)</option>
-      </optgroup>
-      <optgroup label="Half Year">
-        <option value="h1">H1 FY26 (Apr-Sep)</option><option value="h2">H2 FY26 (Oct-Mar)</option>
-      </optgroup>
-      <optgroup label="Other"><option value="custom">Custom Range...</option></optgroup>
-    </select>
-    <div id="customDateRange" style="display:none;align-items:center;gap:6px">
-      <input type="date" id="customFrom" class="date-range" style="padding:6px 10px">
-      <span style="color:var(--text-muted);font-size:12px">to</span>
-      <input type="date" id="customTo" class="date-range" style="padding:6px 10px">
-      <button class="expand-btn" onclick="applyCustomRange()">Apply</button>
-    </div>
-  </div>
+<h1>Knowmax Marketing Dashboard</h1>
+<div class="sub">Last refreshed: 2026-07-27 &nbsp;|&nbsp; GA4 current month: Jul 1&ndash;27, 2026 vs Jun 2026 &nbsp;|&nbsp; Countries: FY Apr 2025&ndash;Mar 2026</div>
+<div class="kpi-grid" id="kpis"></div>
+<div class="tabs">
+<div class="tab active" data-p="traffic">Website Traffic</div>
+<div class="tab" data-p="seo">SEO &amp; Search</div>
+<div class="tab" data-p="ads">Google Ads</div>
+<div class="tab" data-p="crm">CRM Pipeline</div>
 </div>
 
-<!-- ======================== 1. TOP SUMMARY STRIP ======================== -->
-<div class="summary-strip" id="mainSummaryStrip">
-  <div class="summary-item">
-    <div class="s-dot" style="background:var(--accent)"></div>
-    <div><div class="s-num" id="ss_mql">--</div><div class="s-lbl">Total MQLs</div></div>
-  </div>
-  <div class="summary-item">
-    <div class="s-dot" style="background:var(--cyan)"></div>
-    <div><div class="s-num" id="ss_sql">--</div><div class="s-lbl">Total SQLs</div></div>
-  </div>
-  <div class="summary-item">
-    <div class="s-dot" style="background:var(--green)"></div>
-    <div><div class="s-num" id="ss_arr">--</div><div class="s-lbl">Potential ARR</div></div>
-  </div>
-  <div class="summary-item">
-    <div class="s-dot" style="background:var(--orange)"></div>
-    <div><div class="s-num" id="ss_sp_excl">--</div><div class="s-lbl">Spends (excl. salary)</div></div>
-  </div>
-  <div class="summary-item">
-    <div class="s-dot" style="background:var(--red)"></div>
-    <div><div class="s-num" id="ss_sp_incl">--</div><div class="s-lbl">Spends (incl. salary)</div></div>
-  </div>
-  <div class="summary-item">
-    <div class="s-dot" style="background:var(--purple)"></div>
-    <div><div class="s-num" id="ss_deals">--</div><div class="s-lbl">Deals</div></div>
-  </div>
-  <div style="margin-left:auto;font-size:11px;color:var(--text-muted);align-self:center;background:rgba(99,102,241,0.1);padding:4px 10px;border-radius:6px;border:1px solid rgba(99,102,241,0.3)" id="ss_period_label">FY 25-26</div>
+<div class="panel active" id="traffic">
+<div class="row"><div class="card"><h3>Monthly Traffic (12 months)</h3><div class="chart-box"><canvas id="trafficChart"></canvas></div></div></div>
+<div class="row two">
+<div class="card"><h3>Channels (Jul 2026)</h3><div class="chart-box"><canvas id="channelChart"></canvas></div></div>
+<div class="card"><h3>Devices (Jul 2026)</h3><div class="chart-box"><canvas id="deviceChart"></canvas></div></div>
+</div>
+<div class="row two">
+<div class="card"><h3>Top 20 Countries (FY Apr 2025&ndash;Mar 2026)</h3><table id="countryTable"></table></div>
+<div class="card"><h3>Top Pages (Jul 2026)</h3><table id="pageTable"></table></div>
+</div>
 </div>
 
-
-<div class="section-title">
-  <span class="section-icon" style="background:#0d2118;color:#4ade80">P</span>
-  Performance Matrix  - FY 25-26 &nbsp;<span style="font-size:11px;color:#6b7280;font-weight:400">(Source: KM Master Sheet)</span>
+<div class="panel" id="seo">
+<div class="row"><div class="card"><h3>GSC Clicks &amp; Impressions (monthly)</h3><div class="chart-box"><canvas id="gscChart"></canvas></div></div></div>
+<div class="row two">
+<div class="card"><h3>Top 20 Organic Keywords (Ahrefs)</h3><table id="kwTable"></table></div>
+<div class="card"><h3>Top 20 Pages by Organic Traffic (Ahrefs)</h3><table id="seoPageTable"></table></div>
 </div>
-<div id="km-matrix-container" style="overflow-x:auto;margin-bottom:8px">
-  <div style="padding:20px;text-align:center;color:#6b7280">Loading performance data...</div>
-</div>
-
-
-<!-- ======================== 2. HIGHLIGHTS / LOWLIGHTS ======================== -->
-<div class="section-title">
-  <span class="section-icon" style="background:var(--green-bg);color:var(--green)">H</span>
-  Highlights / Lowlights
-</div>
-<div class="hl-grid">
-  <div class="hl-card">
-    <h3 style="color:var(--green)">Highlights</h3>
-    <ul>
-      <li><span class="hl-dot" style="background:var(--green)"></span>Traffic up 14% MoM  - crossed 18K total users</li>
-      <li><span class="hl-dot" style="background:var(--green)"></span>MQLs spiked 76%  - 38 vs 22 last month</li>
-      <li><span class="hl-dot" style="background:var(--green)"></span>Content Live nearly 2X  - 23 pieces published</li>
-      <li><span class="hl-dot" style="background:var(--green)"></span>Form fills doubled  - 198 vs 92 last month</li>
-      <li><span class="hl-dot" style="background:var(--green)"></span>Organic keywords crossed 10K  - 186 in Top 10</li>
-    </ul>
-  </div>
-  <div class="hl-card">
-    <h3 style="color:var(--red)">Lowlights</h3>
-    <ul>
-      <li><span class="hl-dot" style="background:var(--red)"></span>Engagement rate declined 8%  - needs content optimization</li>
-      <li><span class="hl-dot" style="background:var(--red)"></span>CPSQL up 47%  - $1,346 vs $916 last month</li>
-      <li><span class="hl-dot" style="background:var(--red)"></span>Download leads response rate still below 30%</li>
-      <li><span class="hl-dot" style="background:var(--red)"></span>CRM compliance issues  - lead tagging gaps</li>
-      <li><span class="hl-dot" style="background:var(--red)"></span>Digital leads closure rate lagging target</li>
-    </ul>
-  </div>
 </div>
 
-<!-- ======================== 3. USER & ENGAGEMENT METRICS ======================== -->
-<div class="section-title">
-  <span class="section-icon" style="background:var(--blue-bg);color:var(--blue)">W</span>
-  User &amp; Engagement Metrics (GA + GSC + Classic vs LLM)
+<div class="panel" id="ads">
+<div class="row"><div class="card"><h3>Monthly Ad Spend (USD)</h3><div class="chart-box"><canvas id="spendChart"></canvas></div>
+<div class="note">All campaigns are currently paused &mdash; no spend recorded since December 2025.</div></div></div>
+<div class="row"><div class="card"><h3>Campaigns with Activity (trailing 12 months)</h3><table id="campTable"></table></div></div>
 </div>
 
-<div class="kpi-grid">
-  <div class="kpi-card">
-    <div class="label">Total Users (Mar)</div>
-    <div class="value">8,678</div>
-    <span class="change down">-15.6% MoM</span>
-  </div>
-  <div class="kpi-card">
-    <div class="label">New Users (Mar)</div>
-    <div class="value">8,364</div>
-    <span class="change down">-16.8% MoM</span>
-  </div>
-  <div class="kpi-card">
-    <div class="label">Engagement Rate</div>
-    <div class="value">55.8%</div>
-    <span class="change down">-1.6%</span>
-  </div>
-  <div class="kpi-card">
-    <div class="label">Avg Session Duration</div>
-    <div class="value">19m 47s</div>
-    <span class="change down">-0.1%</span>
-  </div>
-  <div class="kpi-card">
-    <div class="label">FY Total Users</div>
-    <div class="value">205.8K</div>
-    <span class="change flat">Full year</span>
-  </div>
-  <div class="kpi-card">
-    <div class="label">FY Total Sessions</div>
-    <div class="value">244.3K</div>
-    <span class="change flat">Full year</span>
-  </div>
-  <div class="kpi-card">
-    <div class="label">FY Total Pageviews</div>
-    <div class="value">364.1K</div>
-    <span class="change flat">Full year</span>
-  </div>
-  <div class="kpi-card">
-    <div class="label">Snov.io Email Credits</div>
-    <div class="value">0</div>
-    <span class="change flat">Remaining</span>
-  </div>
+<div class="panel" id="crm">
+<div class="row two">
+<div class="card"><h3>Leads by Status</h3><div class="chart-box"><canvas id="leadStatusChart"></canvas></div></div>
+<div class="card"><h3>Leads by Source</h3><div class="chart-box"><canvas id="leadSourceChart"></canvas></div></div>
 </div>
-
-<!-- GSC Metrics (mock) -->
-<div class="kpi-grid" style="margin-top:14px">
-  <div class="kpi-card">
-    <div class="label">GSC URL Clicks (7d)</div>
-    <div class="value">268</div>
-    <span class="change down">-64.6% WoW</span>
-  </div>
-  <div class="kpi-card">
-    <div class="label">GSC Impressions (7d)</div>
-    <div class="value">378.6K</div>
-    <span class="change down">-62.1%</span>
-  </div>
-  <div class="kpi-card">
-    <div class="label">GSC Avg Position</div>
-    <div class="value">15.9</div>
-    <span class="change down">+8.5% (worse)</span>
-  </div>
-  <div class="kpi-card">
-    <div class="label">GSC URL CTR</div>
-    <div class="value">0.1%</div>
-    <span class="change down">-6.6%</span>
-  </div>
+<div class="row two">
+<div class="card"><h3>Leads by Owner</h3><div class="chart-box"><canvas id="leadOwnerChart"></canvas></div></div>
+<div class="card"><h3>Deals by Stage (count)</h3><div class="chart-box"><canvas id="dealStageChart"></canvas></div></div>
 </div>
-
-<!-- Charts -->
-<div class="chart-grid" style="margin-top:16px">
-  <div class="chart-card">
-    <h3>Users &amp; New Users Trend (FY 25-26)</h3>
-    <div class="chart-container"><canvas id="trafficChart"></canvas></div>
-  </div>
-  <div class="chart-card">
-    <h3>GSC Clicks vs Impressions (Mock)</h3>
-    <div class="chart-container"><canvas id="clicksImpChart"></canvas></div>
-  </div>
-</div>
-
-<div class="chart-grid" style="margin-top:16px">
-  <div class="chart-card">
-    <h3>Traffic by Country (Last 7 Days)</h3>
-    <table>
-      <thead><tr><th>#</th><th>Country</th><th>Users</th></tr></thead>
-      <tbody>
-        <tr><td>1</td><td>United States</td><td>516</td></tr>
-        <tr><td>2</td><td>India</td><td>314</td></tr>
-        <tr><td>3</td><td>Singapore</td><td>268</td></tr>
-        <tr><td>4</td><td>United Kingdom</td><td>109</td></tr>
-        <tr><td>5</td><td>China</td><td>107</td></tr>
-        <tr><td>6</td><td>Pakistan</td><td>69</td></tr>
-        <tr><td>7</td><td>Philippines</td><td>50</td></tr>
-        <tr><td>8</td><td>Canada</td><td>31</td></tr>
-        <tr><td>9</td><td>Netherlands</td><td>31</td></tr>
-        <tr><td>10</td><td>South Africa</td><td>30</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <div class="chart-card">
-    <h3>Device &amp; Channel Breakdown</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-      <div>
-        <h4 style="font-size:12px;color:var(--text-muted);margin-bottom:8px">DEVICE</h4>
-        <div class="dve-row"><span class="dve-label">Desktop</span><span class="dve-val">84.9%</span></div>
-        <div class="dve-row"><span class="dve-label">Mobile</span><span class="dve-val">14.0%</span></div>
-        <div class="dve-row"><span class="dve-label">Tablet</span><span class="dve-val">1.1%</span></div>
-
-      </div>
-      <div>
-        <h4 style="font-size:12px;color:var(--text-muted);margin-bottom:8px">CHANNEL</h4>
-        <div class="dve-row"><span class="dve-label">Direct</span><span class="dve-val">53.8%</span></div>
-        <div class="dve-row"><span class="dve-label">Organic Search</span><span class="dve-val">37.6%</span></div>
-        <div class="dve-row"><span class="dve-label">Referral</span><span class="dve-val">4.3%</span></div>
-        <div class="dve-row"><span class="dve-label">Organic Social</span><span class="dve-val">2.2%</span></div>
-        <div class="dve-row"><span class="dve-label">Unassigned</span><span class="dve-val">2.2%</span></div>
-
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Classic vs LLM Traffic (mock) -->
-<div class="dve-grid" style="margin-top:16px">
-  <div class="dve-card">
-    <h4><span class="section-icon" style="background:var(--blue-bg);color:var(--blue)">C</span> Classic Organic Traffic</h4>
-    <div class="dve-row"><span class="dve-label">Total Users</span><span class="dve-val">2,262</span></div>
-    <div class="dve-row"><span class="dve-label">Google/Organic</span><span class="dve-val">60.5%</span></div>
-    <div class="dve-row"><span class="dve-label">knowmax.ai/Referral</span><span class="dve-val">8.1%</span></div>
-    <div class="dve-row"><span class="dve-label">Bing/Organic</span><span class="dve-val">2.7%</span></div>
-    <div class="dve-row"><span class="dve-label">Others</span><span class="dve-val">19%</span></div>
-  </div>
-  <div class="dve-card">
-    <h4><span class="section-icon" style="background:rgba(168,85,247,0.15);color:var(--purple)">L</span> LLM Referral Traffic</h4>
-    <div class="dve-row"><span class="dve-label">Total LLM Referral Users</span><span class="dve-val">27</span></div>
-    <div class="dve-row"><span class="dve-label">ChatGPT</span><span class="dve-val">25%</span></div>
-    <div class="dve-row"><span class="dve-label">Claude.ai</span><span class="dve-val">25%</span></div>
-    <div class="dve-row"><span class="dve-label">Gemini</span><span class="dve-val">25%</span></div>
-    <div class="dve-row"><span class="dve-label">Perplexity</span><span class="dve-val">25%</span></div>
-  </div>
-</div>
-
-<!-- ======================== 4. TYPE OF WEB INQUIRY ======================== -->
-<div class="section-title">
-  <span class="section-icon" style="background:rgba(168,85,247,0.15);color:var(--purple)">I</span>
-  Type of Web Inquiry
-</div>
-
-<div class="table-card" style="margin-bottom:16px">
-  <h3>Monthly Web Inquiry Breakdown - FY 25-26 &nbsp;<span style="font-size:11px;color:var(--text-muted);font-weight:400">(Source: KM Master Sheet - Digital sub-sheet)</span></h3>
-  <div style="overflow-x:auto">
-  <table>
-    <thead>
-      <tr>
-        <th>Inquiry Type</th><th>Apr</th><th>May</th><th>Jun</th><th class="subtotal">Q1</th>
-        <th>Jul</th><th>Aug</th><th>Sep</th><th class="subtotal">Q2</th>
-        <th>Oct</th><th>Nov</th><th>Dec</th><th class="subtotal">Q3</th>
-        <th>Jan</th><th>Feb</th><th>Mar</th><th class="subtotal">Q4</th>
-        <th>FY</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr><td>Schedule Demo (Calendly)</td><td>16</td><td>11</td><td>5</td><td class="subtotal"><b>32</b></td><td>12</td><td>8</td><td>13</td><td class="subtotal"><b>33</b></td><td>15</td><td>18</td><td>9</td><td class="subtotal"><b>42</b></td><td>13</td><td>12</td><td>18</td><td class="subtotal"><b>43</b></td><td><b>150</b></td></tr>
-      <tr><td>Downloads (Assets/Guides/eBooks)</td><td>142</td><td>95</td><td>46</td><td class="subtotal"><b>283</b></td><td>110</td><td>70</td><td>115</td><td class="subtotal"><b>295</b></td><td>137</td><td>157</td><td>80</td><td class="subtotal"><b>374</b></td><td>114</td><td>110</td><td>157</td><td class="subtotal"><b>381</b></td><td><b>1,333</b></td></tr>
-      <tr><td>RFP</td><td>5</td><td>4</td><td>2</td><td class="subtotal"><b>11</b></td><td>4</td><td>3</td><td>4</td><td class="subtotal"><b>11</b></td><td>5</td><td>6</td><td>3</td><td class="subtotal"><b>14</b></td><td>4</td><td>4</td><td>6</td><td class="subtotal"><b>14</b></td><td><b>50</b></td></tr>
-      <tr><td>Web Enquiry / Partner</td><td>11</td><td>7</td><td>3</td><td class="subtotal"><b>21</b></td><td>9</td><td>5</td><td>9</td><td class="subtotal"><b>23</b></td><td>11</td><td>11</td><td>6</td><td class="subtotal"><b>28</b></td><td>9</td><td>9</td><td>12</td><td class="subtotal"><b>30</b></td><td><b>102</b></td></tr>
-      <tr class="subtotal"><td><b>Total Form Fills</b></td><td><b>174</b></td><td><b>117</b></td><td><b>56</b></td><td><b>347</b></td><td><b>135</b></td><td><b>86</b></td><td><b>141</b></td><td><b>362</b></td><td><b>168</b></td><td><b>192</b></td><td><b>98</b></td><td><b>458</b></td><td><b>140</b></td><td><b>135</b></td><td><b>193</b></td><td><b>468</b></td><td><b>1,635</b></td></tr>
-    </tbody>
-  </table>
-  </div>
-</div>
-
-<!-- ======================== 5. CONTENT & SEO ======================== -->
-<div class="section-title">
-  <span class="section-icon" style="background:rgba(6,182,212,0.15);color:var(--cyan)">C</span>
-  Content &amp; SEO
-</div>
-
-<div class="kpi-grid">
-  <div class="kpi-card"><div class="label">Content Live</div><div class="value">23</div><span class="change up">+92% MoM</span></div>
-  <div class="kpi-card"><div class="label">Blog Views</div><div class="value">18,420</div><span class="change up">+12%</span></div>
-  <div class="kpi-card"><div class="label">Backlinks</div><div class="value">48</div><span class="change up">+8 new</span></div>
-  <div class="kpi-card"><div class="label">Email Open Rate</div><div class="value">28.4%</div><span class="change up">+3.2pp</span></div>
-  <div class="kpi-card"><div class="label">Email Click Rate</div><div class="value">4.2%</div><span class="change flat">+0.1pp</span></div>
-  <div class="kpi-card"><div class="label">LinkedIn Followers</div><div class="value">14,820</div><span class="change up">+340</span></div>
-</div>
-
-<!-- Content Plan Table -->
-<div class="table-card" style="margin-top:16px;margin-bottom:16px">
-  <h3>Content Plan Tracker (March)</h3>
-  <table>
-    <thead><tr><th>Content Type</th><th>Planned</th><th>Achieved</th><th>Status</th></tr></thead>
-    <tbody>
-      <tr><td>Blog Posts</td><td>8</td><td>10</td><td><span class="badge badge-green">Ahead</span></td></tr>
-      <tr><td>Whitepapers / eBooks</td><td>2</td><td>2</td><td><span class="badge badge-green">On Track</span></td></tr>
-      <tr><td>Case Studies</td><td>2</td><td>1</td><td><span class="badge badge-yellow">Behind</span></td></tr>
-      <tr><td>Landing Pages</td><td>3</td><td>4</td><td><span class="badge badge-green">Ahead</span></td></tr>
-      <tr><td>Videos</td><td>2</td><td>1</td><td><span class="badge badge-yellow">Behind</span></td></tr>
-      <tr><td>Infographics</td><td>2</td><td>3</td><td><span class="badge badge-green">Ahead</span></td></tr>
-      <tr><td>Social Posts</td><td>15</td><td>12</td><td><span class="badge badge-yellow">Behind</span></td></tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="chart-grid">
-  <div class="chart-card">
-    <h3>Content Output: Planned vs Achieved</h3>
-    <div class="chart-container"><canvas id="contentChart"></canvas></div>
-  </div>
-  <div class="chart-card">
-    <h3>Email Campaign Performance</h3>
-    <div class="chart-container"><canvas id="emailChart"></canvas></div>
-  </div>
-</div>
-
-<!-- Newsletters Table -->
-<div class="table-card" style="margin-top:16px;margin-bottom:16px">
-  <h3>Newsletters (FY 25-26)</h3>
-  <table>
-    <thead><tr><th>Month</th><th>Subject</th><th>Sent</th><th>Opens</th><th>Open Rate</th><th>Clicks</th><th>CTR</th></tr></thead>
-    <tbody>
-      <tr><td>Mar</td><td>AI in CX: March Digest</td><td>4,200</td><td>1,260</td><td>30.0%</td><td>168</td><td>4.0%</td></tr>
-      <tr><td>Feb</td><td>Knowledge Management Trends</td><td>4,100</td><td>1,107</td><td>27.0%</td><td>156</td><td>3.8%</td></tr>
-      <tr><td>Jan</td><td>2026 CX Predictions</td><td>3,950</td><td>1,145</td><td>29.0%</td><td>170</td><td>4.3%</td></tr>
-      <tr><td>Dec</td><td>Year in Review 2025</td><td>3,800</td><td>1,064</td><td>28.0%</td><td>152</td><td>4.0%</td></tr>
-      <tr><td>Nov</td><td>Customer Success Stories</td><td>3,700</td><td>962</td><td>26.0%</td><td>130</td><td>3.5%</td></tr>
-    </tbody>
-  </table>
-</div>
-
-<!-- Cold Email Table -->
-<div class="table-card" style="margin-bottom:16px">
-  <h3>Cold Email Campaigns</h3>
-  <table>
-    <thead><tr><th>Campaign</th><th>Sent</th><th>Opens</th><th>Open Rate</th><th>Replies</th><th>Reply Rate</th><th>Bounced</th></tr></thead>
-    <tbody>
-      <tr><td>US Enterprise Q4</td><td>1,200</td><td>420</td><td>35.0%</td><td>36</td><td>3.0%</td><td>48</td></tr>
-      <tr><td>APAC Mid-Market</td><td>800</td><td>256</td><td>32.0%</td><td>18</td><td>2.3%</td><td>32</td></tr>
-      <tr><td>EU GDPR Compliant</td><td>600</td><td>198</td><td>33.0%</td><td>15</td><td>2.5%</td><td>18</td></tr>
-      <tr><td>BPO Decision Makers</td><td>950</td><td>342</td><td>36.0%</td><td>28</td><td>2.9%</td><td>38</td></tr>
-    </tbody>
-  </table>
-</div>
-
-<!-- Live Content Tracker -->
-<div class="table-card" style="margin-bottom:16px">
-  <h3>Live Content Tracker (March)</h3>
-  <table>
-    <thead><tr><th>#</th><th>Title</th><th>Type</th><th>Published</th><th>Views</th><th>Status</th></tr></thead>
-    <tbody>
-      <tr><td>1</td><td>Ultimate Guide to Knowledge Management</td><td>Blog</td><td>Mar 3</td><td>2,450</td><td><span class="badge badge-green">Live</span></td></tr>
-      <tr><td>2</td><td>AI-Powered Customer Support Whitepaper</td><td>eBook</td><td>Mar 5</td><td>820</td><td><span class="badge badge-green">Live</span></td></tr>
-      <tr><td>3</td><td>Decision Trees for Contact Centers</td><td>Blog</td><td>Mar 8</td><td>1,890</td><td><span class="badge badge-green">Live</span></td></tr>
-      <tr><td>4</td><td>CX Transformation Case Study</td><td>Case Study</td><td>Mar 12</td><td>640</td><td><span class="badge badge-green">Live</span></td></tr>
-      <tr><td>5</td><td>Knowmax vs Guru Comparison</td><td>Landing</td><td>Mar 15</td><td>1,320</td><td><span class="badge badge-green">Live</span></td></tr>
-      <tr><td>6</td><td>Self-Service Portal Benefits</td><td>Blog</td><td>Mar 18</td><td>980</td><td><span class="badge badge-green">Live</span></td></tr>
-      <tr><td>7</td><td>ROI of Knowledge Base Infographic</td><td>Infographic</td><td>Mar 20</td><td>1,150</td><td><span class="badge badge-green">Live</span></td></tr>
-    </tbody>
-  </table>
-</div>
-
-<!-- ======================== 6. LEADS & PIPELINE ======================== -->
-<div class="section-title">
-  <span class="section-icon" style="background:var(--green-bg);color:var(--green)">L</span>
-  Leads &amp; Pipeline
-</div>
-
-<div class="kpi-grid">
-  <div class="kpi-card"><div class="label">Total Leads (FY)</div><div class="value">714</div><span class="change flat">KM Master Sheet</span></div>
-  <div class="kpi-card"><div class="label">Total Deals</div><div class="value">11</div><span class="change flat">Pipeline + Won</span></div>
-  <div class="kpi-card"><div class="label">Open Deals</div><div class="value">8</div><span class="change up">Active pipeline</span></div>
-  <div class="kpi-card"><div class="label">Deals Won</div><div class="value">3</div><span class="change flat">$143,440 ARR</span></div>
-  <div class="kpi-card"><div class="label">Potential ARR</div><div class="value">$13,830,000</div><span class="change up">Total pipeline value</span></div>
-  <div class="kpi-card"><div class="label">Form Fills (Mar)</div><div class="value">198</div><span class="change up">+115% MoM</span></div>
-  <div class="kpi-card"><div class="label">MQLs (Mar)</div><div class="value">38</div><span class="change up">+76% MoM</span></div>
-  <div class="kpi-card"><div class="label">SQLs (Mar)</div><div class="value">13</div><span class="change up">+30%</span></div>
-  <div class="kpi-card"><div class="label">CPMQL</div><div class="value">$461</div><span class="change down">+18% (higher)</span></div>
-  <div class="kpi-card"><div class="label">CPSQL</div><div class="value">$1,346</div><span class="change down">+47% (higher)</span></div>
-</div>
-
-<!-- Digital vs Events Split -->
-<div class="dve-grid" style="margin-top:16px">
-  <div class="dve-card">
-    <h4><span class="section-icon" style="background:var(--blue-bg);color:var(--blue)">D</span> Digital Leads</h4>
-    <div class="dve-row"><span class="dve-label">Form Fills</span><span class="dve-val">152</span></div>
-    <div class="dve-row"><span class="dve-label">MQLs</span><span class="dve-val">28</span></div>
-    <div class="dve-row"><span class="dve-label">SQLs</span><span class="dve-val">9</span></div>
-    <div class="dve-row"><span class="dve-label">CPMQL</span><span class="dve-val">$410</span></div>
-    <div class="dve-row"><span class="dve-label">CPSQL</span><span class="dve-val">$1,280</span></div>
-  </div>
-  <div class="dve-card">
-    <h4><span class="section-icon" style="background:var(--orange);color:#fff">E</span> Events Leads</h4>
-    <div class="dve-row"><span class="dve-label">Form Fills</span><span class="dve-val">46</span></div>
-    <div class="dve-row"><span class="dve-label">MQLs</span><span class="dve-val">10</span></div>
-    <div class="dve-row"><span class="dve-label">SQLs</span><span class="dve-val">4</span></div>
-    <div class="dve-row"><span class="dve-label">CPMQL</span><span class="dve-val">$580</span></div>
-    <div class="dve-row"><span class="dve-label">CPSQL</span><span class="dve-val">$1,450</span></div>
-  </div>
-</div>
-
-<div class="chart-grid">
-  <div class="chart-card">
-    <h3>Monthly Leads (KM Master Sheet)</h3>
-    <div class="chart-container"><canvas id="leadsChart"></canvas></div>
-  </div>
-  <div class="chart-card">
-    <h3>Lead Funnel: Form Fills &rarr; MQLs &rarr; SQLs</h3>
-    <div class="chart-container"><canvas id="funnelChart"></canvas></div>
-  </div>
-</div>
-
-<div class="chart-grid" style="margin-top:16px">
-  <div class="chart-card">
-    <h3>CPMQL &amp; CPSQL Trend</h3>
-    <div class="chart-container"><canvas id="cpChart"></canvas></div>
-  </div>
-  <div class="chart-card">
-    <h3>ARR by Channel</h3>
-    <div class="chart-container"><canvas id="arrChart"></canvas></div>
-  </div>
-</div>
-
-<!-- ======================== 7. TECHNICAL SEO & AI READINESS ======================== -->
-<div class="section-title">
-  <span class="section-icon" style="background:rgba(236,72,153,0.15);color:var(--pink)">T</span>
-  Technical SEO &amp; AI Readiness
-</div>
-
-<div style="text-align:center;margin-bottom:16px;padding:16px;background:var(--card);border:1px solid var(--border);border-radius:12px">
-  <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Overall SEO Health Score</div>
-  <div style="font-size:48px;font-weight:700;color:var(--orange)">62<span style="font-size:20px;color:var(--text-muted)">/100</span></div>
-</div>
-
-<div class="score-grid">
-  <div class="score-card"><div class="score-val" style="color:var(--red)">55</div><div class="score-lbl">Crawlability</div></div>
-  <div class="score-card"><div class="score-val" style="color:var(--yellow)">60</div><div class="score-lbl">Indexability</div></div>
-  <div class="score-card"><div class="score-val" style="color:var(--red)">40</div><div class="score-lbl">Performance</div></div>
-  <div class="score-card"><div class="score-val" style="color:var(--red)">35</div><div class="score-lbl">Security</div></div>
-  <div class="score-card"><div class="score-val" style="color:var(--green)">75</div><div class="score-lbl">Structured Data</div></div>
-  <div class="score-card"><div class="score-val" style="color:var(--red)">45</div><div class="score-lbl">AI Search Ready</div></div>
-  <div class="score-card"><div class="score-val" style="color:var(--green)">70</div><div class="score-lbl">On-Page SEO</div></div>
-  <div class="score-card"><div class="score-val" style="color:var(--green)">72</div><div class="score-lbl">Site Architecture</div></div>
-  <div class="score-card"><div class="score-val" style="color:var(--yellow)">68</div><div class="score-lbl">Mobile</div></div>
-  <div class="score-card"><div class="score-val" style="color:var(--yellow)">65</div><div class="score-lbl">URL Hygiene</div></div>
-</div>
-
-<div class="table-card" style="margin-bottom:16px">
-  <h3>Critical Issues</h3>
-  <table>
-    <thead><tr><th>Issue</th><th>Category</th><th>Severity</th><th>Pages Affected</th><th>Priority</th></tr></thead>
-    <tbody>
-      <tr><td>Missing HTTPS on 12 internal links</td><td>Security</td><td><span class="badge badge-red">Critical</span></td><td>12</td><td>P0</td></tr>
-      <tr><td>LCP > 4s on mobile for 8 pages</td><td>Performance</td><td><span class="badge badge-red">Critical</span></td><td>8</td><td>P0</td></tr>
-      <tr><td>Duplicate title tags across 15 pages</td><td>On-Page</td><td><span class="badge badge-yellow">High</span></td><td>15</td><td>P1</td></tr>
-      <tr><td>Robots.txt blocking CSS/JS resources</td><td>Crawlability</td><td><span class="badge badge-yellow">High</span></td><td>All</td><td>P1</td></tr>
-      <tr><td>No FAQ schema on product pages</td><td>Structured Data</td><td><span class="badge badge-yellow">Medium</span></td><td>6</td><td>P2</td></tr>
-      <tr><td>Missing llms.txt / llms-full.txt</td><td>AI Search</td><td><span class="badge badge-yellow">Medium</span></td><td>All</td><td>P2</td></tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="table-card" style="margin-bottom:16px">
-  <h3>Page Performance (Core Web Vitals)</h3>
-  <table>
-    <thead><tr><th>Page</th><th>LCP (s)</th><th>FID (ms)</th><th>CLS</th><th>Mobile Score</th><th>Desktop Score</th></tr></thead>
-    <tbody>
-      <tr><td>knowmax.ai</td><td>2.8</td><td>120</td><td>0.15</td><td>58</td><td>82</td></tr>
-      <tr><td>/product</td><td>3.2</td><td>95</td><td>0.08</td><td>52</td><td>78</td></tr>
-      <tr><td>/pricing</td><td>2.1</td><td>80</td><td>0.05</td><td>72</td><td>90</td></tr>
-      <tr><td>/blog</td><td>3.8</td><td>150</td><td>0.22</td><td>45</td><td>68</td></tr>
-      <tr><td>/demo</td><td>2.4</td><td>90</td><td>0.06</td><td>68</td><td>88</td></tr>
-      <tr><td>/resources</td><td>4.1</td><td>180</td><td>0.18</td><td>38</td><td>62</td></tr>
-    </tbody>
-  </table>
-</div>
-
-<!-- ======================== 8. KEY ACCOUNTS ADDED ======================== -->
-<div class="section-title">
-  <span class="section-icon" style="background:rgba(34,197,94,0.15);color:var(--green)">A</span>
-  Key Accounts Added
-</div>
-
-<div class="table-card" style="margin-bottom:16px">
-  <h3>Key Accounts - FY 25-26 (Source: KM Master Sheet)</h3>
-  <table>
-    <thead>
-      <tr><th>Account</th><th>Stage</th><th>Pot. ARR</th><th>Region</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>MoE</td><td><span class="badge badge-blue">Pipeline</span></td><td>$200,000</td><td>KSA</td></tr>
-      <tr><td>Royal Guard Hospitals</td><td><span class="badge badge-blue">Pipeline</span></td><td>$100,000</td><td>KSA</td></tr>
-      <tr><td>GAMI</td><td><span class="badge badge-blue">Pipeline</span></td><td>$80,000</td><td>KSA</td></tr>
-      <tr><td>GOSI</td><td><span class="badge badge-blue">Pipeline</span></td><td>$80,000</td><td>KSA</td></tr>
-      <tr><td>Truckstop</td><td><span class="badge badge-green">Won</span></td><td>$78,000</td><td>USA</td></tr>
-      <tr><td>Lean</td><td><span class="badge badge-blue">Pipeline</span></td><td>$50,000</td><td>-</td></tr>
-      <tr><td>Etisal</td><td><span class="badge badge-blue">Pipeline</span></td><td>$50,000</td><td>-</td></tr>
-      <tr><td>Nationwide</td><td><span class="badge badge-green">Won</span></td><td>$37,400</td><td>USA</td></tr>
-      <tr><td>Gannett</td><td><span class="badge badge-green">Won</span></td><td>$28,000</td><td>USA</td></tr>
-      <tr><td>SeeC</td><td><span class="badge badge-green">Won</span></td><td>$5,000</td><td>KSA</td></tr>
-      <tr><td>Ministry of Sports</td><td><span class="badge badge-blue">Pipeline</span></td><td>$5,000</td><td>KSA</td></tr>
-    </tbody>
-  </table>
-</div>
-
-<!-- ======================== 9. EVENTS & CONFERENCES ======================== -->
-<div class="section-title">
-  <span class="section-icon" style="background:rgba(249,115,22,0.15);color:var(--orange)">E</span>
-  Events &amp; Conferences
-</div>
-
-<div class="table-card" style="margin-bottom:16px">
-  <h3>Events Calendar  - FY 25-26 &nbsp;<span style="font-size:11px;color:var(--text-muted);font-weight:400">(14 Events &middot; Source: KM Master Sheet)</span></h3>
-  <div style="overflow-x:auto">
-  <table>
-    <thead>
-      <tr>
-        <th>Qtr</th><th>Date</th><th>Event</th><th>Partner</th>
-        <th>Region</th><th>Country</th><th>Spent</th>
-        <th>MQL</th><th>SQL</th><th>Pot. Revenue</th><th>Won</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="badge badge-blue">Q1</span></td><td>19-Apr-24</td><td>DCX Event</td><td>-</td>
-        <td>Asia</td><td>India</td><td>$1,000</td><td>28</td><td>-</td><td>-</td><td>-</td>
-      </tr>
-      <tr>
-        <td><span class="badge badge-blue">Q1</span></td><td>30-Apr-24</td><td>USA Event</td><td>-</td>
-        <td>Americas</td><td>USA</td><td>$3,275</td><td>9</td><td>1</td><td>$100K</td><td>-</td>
-      </tr>
-      <tr>
-        <td><span class="badge badge-blue">Q1</span></td><td>15-May-24</td><td>Daveo</td><td>-</td>
-        <td>EMEA</td><td>Oman</td><td>$3,000</td><td>1</td><td>1</td><td>$60K</td><td>-</td>
-      </tr>
-      <tr>
-        <td><span class="badge badge-blue">Q1</span></td><td>20-May-24</td><td>Knowledge: Fuel for AI-Driven CX</td><td>-</td>
-        <td>EMEA</td><td>KSA</td><td>$9,400</td><td>12</td><td>2</td><td>$20K</td><td>-</td>
-      </tr>
-      <tr>
-        <td><span class="badge badge-purple">Q2</span></td><td>10-Jul-24</td><td>E3CX  - KSA</td><td>-</td>
-        <td>EMEA</td><td>KSA</td><td>$11,000</td><td>18</td><td>5</td><td>$140K</td><td>-</td>
-      </tr>
-      <tr>
-        <td><span class="badge badge-purple">Q2</span></td><td>16-Sep-24</td><td>Saudi Jordan Modern (Closed Door)</td><td>-</td>
-        <td>EMEA</td><td>KSA</td><td>$11,000</td><td>6</td><td>3</td><td>$172.8K</td><td>-</td>
-      </tr>
-      <tr>
-        <td><span class="badge badge-purple">Q2</span></td><td>19-Sep-24</td><td>Kenyan CX</td><td>-</td>
-        <td>EMEA</td><td>Kenya</td><td>$2,807</td><td>22</td><td>5</td><td>$300K</td><td>-</td>
-      </tr>
-      <tr>
-        <td><span class="badge badge-yellow">Q3</span></td><td>2-Oct-24</td><td>X-Shift &times; Knowmax</td><td>X-Shift</td>
-        <td>EMEA</td><td>KSA</td><td>$3,439</td><td>8</td><td>8</td><td>$570K</td><td><span style="color:var(--green)">$5K</span></td>
-      </tr>
-      <tr>
-        <td><span class="badge badge-yellow">Q3</span></td><td>23-Oct-24</td><td>CX Day Latinoam&eacute;rica</td><td>-</td>
-        <td>Americas</td><td>Colombia</td><td>$981</td><td>11</td><td>9</td><td>$143.4K</td><td>-</td>
-      </tr>
-      <tr>
-        <td><span class="badge badge-yellow">Q3</span></td><td>13-Nov-24</td><td>CCAM CX Summit</td><td>-</td>
-        <td>APAC</td><td>Malaysia</td><td>$10,622</td><td>31</td><td>19</td><td>$670K</td><td>-</td>
-      </tr>
-      <tr>
-        <td><span class="badge badge-yellow">Q3</span></td><td>19-Nov-24</td><td>The Countdown to CX Transformation</td><td>CYN Solutions</td>
-        <td>APAC</td><td>Philippines</td><td>$5,312</td><td>23</td><td>4</td><td>$30K</td><td>-</td>
-      </tr>
-      <tr>
-        <td><span class="badge badge-green">Q4</span></td><td>13-Feb-25</td><td>Firstsource SOAR Event</td><td>Firstsource</td>
-        <td>Americas</td><td>USA</td><td>$10,251</td><td>4</td><td>4</td><td>$168.9K</td><td><span style="color:var(--green)">$28K</span></td>
-      </tr>
-      <tr>
-        <td><span class="badge badge-green">Q4</span></td><td>3-Mar-25</td><td>MWC&rsquo;25</td><td>-</td>
-        <td>EMEA</td><td>Spain</td><td>$7,437</td><td>41</td><td>4</td><td>$120K</td><td>-</td>
-      </tr>
-      <tr>
-        <td><span class="badge badge-green">Q4</span></td><td>27-Mar-25</td><td>AI Knowledge for CX: Impact for Financial Services</td><td>CYN Solutions</td>
-        <td>APAC</td><td>Philippines</td><td>$5,158</td><td>25</td><td>5</td><td>$160K</td><td>-</td>
-      </tr>
-      <tr class="subtotal">
-        <td colspan="6"><b>FY 25-26 Total (14 Events)</b></td>
-        <td><b>$84,682</b></td><td><b>239</b></td><td><b>71</b></td><td><b>$2.67Mn</b></td><td><b>$33K</b></td>
-      </tr>
-    </tbody>
-  </table>
-  </div>
-</div>
-
-<!-- ======================== 10. MARKETING SPENDS ======================== -->
-<div class="section-title">
-  <span class="section-icon" style="background:rgba(249,115,22,0.15);color:var(--orange)">$</span>
-  Marketing Spends
-</div>
-
-<div class="spend-total-strip">
-  <div>
-    <div class="total-label">March MTD Spend</div>
-    <div class="total-value">$17,500</div>
-  </div>
-  <div style="text-align:center">
-    <div class="total-label">Monthly Budget</div>
-    <div style="font-size:22px;font-weight:700;color:var(--text)">$22,000</div>
-  </div>
-  <div style="text-align:right">
-    <div class="total-label">Budget Utilization</div>
-    <div style="font-size:22px;font-weight:700;color:var(--green)">79.5%</div>
-    <div class="budget-info">Google Ads FY Total: $458</div>
-  </div>
-</div>
-
-<!-- Spend categories with progress bars -->
-<div class="spend-grid" style="margin-bottom:16px">
-  <div class="spend-item"><div class="s-label">Google Ads</div><div class="s-value">$4,200</div><div class="s-pct">24.0% of total</div><div class="progress-bar"><div class="progress-fill" style="width:84%;background:var(--blue)"></div></div></div>
-  <div class="spend-item"><div class="s-label">LinkedIn Ads</div><div class="s-value">$3,800</div><div class="s-pct">21.7%</div><div class="progress-bar"><div class="progress-fill" style="width:76%;background:var(--accent)"></div></div></div>
-  <div class="spend-item"><div class="s-label">Content Production</div><div class="s-value">$2,800</div><div class="s-pct">16.0%</div><div class="progress-bar"><div class="progress-fill" style="width:93%;background:var(--green)"></div></div></div>
-  <div class="spend-item"><div class="s-label">Events</div><div class="s-value">$3,000</div><div class="s-pct">17.1%</div><div class="progress-bar"><div class="progress-fill" style="width:60%;background:var(--orange)"></div></div></div>
-  <div class="spend-item"><div class="s-label">SEO Tools</div><div class="s-value">$1,200</div><div class="s-pct">6.9%</div><div class="progress-bar"><div class="progress-fill" style="width:100%;background:var(--cyan)"></div></div></div>
-  <div class="spend-item"><div class="s-label">Email Tools</div><div class="s-value">$800</div><div class="s-pct">4.6%</div><div class="progress-bar"><div class="progress-fill" style="width:100%;background:var(--purple)"></div></div></div>
-  <div class="spend-item"><div class="s-label">Design / Creative</div><div class="s-value">$900</div><div class="s-pct">5.1%</div><div class="progress-bar"><div class="progress-fill" style="width:90%;background:var(--pink)"></div></div></div>
-  <div class="spend-item"><div class="s-label">Miscellaneous</div><div class="s-value">$800</div><div class="s-pct">4.6%</div><div class="progress-bar"><div class="progress-fill" style="width:67%;background:var(--yellow)"></div></div></div>
-</div>
-
-<!-- Tool Stack (INR) -->
-<div class="table-card" style="margin-bottom:16px">
-  <h3>Tool Stack (Monthly Costs in INR)</h3>
-  <table>
-    <thead><tr><th>Tool</th><th>Purpose</th><th>Monthly (INR)</th><th>Annual (INR)</th><th>Status</th></tr></thead>
-    <tbody>
-      <tr><td>Yoast SEO Premium</td><td>On-page SEO</td><td>&#x20B9;1,680</td><td>&#x20B9;20,160</td><td><span class="badge badge-green">Active</span></td></tr>
-      <tr><td>Fireflies.ai</td><td>Meeting transcription</td><td>&#x20B9;2,520</td><td>&#x20B9;30,240</td><td><span class="badge badge-green">Active</span></td></tr>
-      <tr><td>Snov.io</td><td>Email outreach &amp; verification</td><td>&#x20B9;3,360</td><td>&#x20B9;40,320</td><td><span class="badge badge-green">Active</span></td></tr>
-      <tr><td>Apollo.io</td><td>Prospecting &amp; enrichment</td><td>&#x20B9;8,400</td><td>&#x20B9;100,800</td><td><span class="badge badge-green">Active</span></td></tr>
-      <tr><td>Storylane</td><td>Interactive product demos</td><td>&#x20B9;4,200</td><td>&#x20B9;50,400</td><td><span class="badge badge-green">Active</span></td></tr>
-      <tr><td>Make.com</td><td>Workflow automation</td><td>&#x20B9;840</td><td>&#x20B9;10,080</td><td><span class="badge badge-green">Active</span></td></tr>
-    </tbody>
-  </table>
-</div>
-
-<div class="chart-grid">
-  <div class="chart-card">
-    <h3>Monthly Spend Trend (Stacked)</h3>
-    <div class="chart-container"><canvas id="spendTrendChart"></canvas></div>
-  </div>
-  <div class="chart-card">
-    <h3>Spend Distribution</h3>
-    <div class="chart-container"><canvas id="spendDonutChart"></canvas></div>
-  </div>
-</div>
-
-<div class="chart-grid" style="margin-top:16px">
-  <div class="chart-card">
-    <h3>Google Ads  - Monthly Spend (USD)</h3>
-    <div class="chart-container"><canvas id="adsSpendChart"></canvas></div>
-  </div>
-  <div class="chart-card">
-    <h3>Cumulative Spend vs Pipeline ARR</h3>
-    <div class="chart-container"><canvas id="spendVsArrChart"></canvas></div>
-  </div>
-</div>
-
-<!-- Detailed Spend Breakdown -->
-<div class="table-card" style="margin-top:16px;margin-bottom:16px">
-  <h3>Detailed Monthly Spend Breakdown (FY 25-26)</h3>
-  <div style="overflow-x:auto">
-  <table>
-    <thead>
-      <tr><th>Category</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th><th>Jan</th><th>Feb</th><th>Mar</th><th>FY Total</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>Google Ads</td><td>$3.8K</td><td>$4.1K</td><td>$4.5K</td><td>$4.2K</td><td>$3.9K</td><td>$4.0K</td><td>$3.6K</td><td>$3.8K</td><td>$3.2K</td><td>$3.5K</td><td>$3.9K</td><td>$4.2K</td><td>$46.7K</td></tr>
-      <tr><td>LinkedIn Ads</td><td>$3.2K</td><td>$3.5K</td><td>$3.8K</td><td>$3.6K</td><td>$3.4K</td><td>$3.5K</td><td>$3.2K</td><td>$3.4K</td><td>$3.0K</td><td>$3.2K</td><td>$3.5K</td><td>$3.8K</td><td>$41.1K</td></tr>
-      <tr><td>Content</td><td>$2.2K</td><td>$2.4K</td><td>$2.6K</td><td>$2.5K</td><td>$2.3K</td><td>$2.4K</td><td>$2.2K</td><td>$2.5K</td><td>$2.0K</td><td>$2.4K</td><td>$2.6K</td><td>$2.8K</td><td>$28.9K</td></tr>
-      <tr><td>Events</td><td>$1.5K</td><td>$5.0K</td><td>$2.0K</td><td>$1.0K</td><td>$1.5K</td><td>$2.5K</td><td>$3.0K</td><td>$1.0K</td><td>$1.5K</td><td>$4.5K</td><td>$2.0K</td><td>$3.0K</td><td>$28.5K</td></tr>
-      <tr><td>SEO Tools</td><td>$1.2K</td><td>$1.2K</td><td>$1.2K</td><td>$1.2K</td><td>$1.2K</td><td>$1.2K</td><td>$1.2K</td><td>$1.2K</td><td>$1.2K</td><td>$1.2K</td><td>$1.2K</td><td>$1.2K</td><td>$14.4K</td></tr>
-      <tr><td>Email Tools</td><td>$0.8K</td><td>$0.8K</td><td>$0.8K</td><td>$0.8K</td><td>$0.8K</td><td>$0.8K</td><td>$0.8K</td><td>$0.8K</td><td>$0.8K</td><td>$0.8K</td><td>$0.8K</td><td>$0.8K</td><td>$9.6K</td></tr>
-      <tr><td>Design</td><td>$0.9K</td><td>$0.9K</td><td>$0.9K</td><td>$0.9K</td><td>$0.9K</td><td>$0.9K</td><td>$0.9K</td><td>$0.9K</td><td>$0.9K</td><td>$0.9K</td><td>$0.9K</td><td>$0.9K</td><td>$10.8K</td></tr>
-      <tr><td>Misc</td><td>$0.5K</td><td>$0.6K</td><td>$0.7K</td><td>$0.6K</td><td>$0.5K</td><td>$0.6K</td><td>$0.7K</td><td>$0.8K</td><td>$0.5K</td><td>$0.6K</td><td>$0.7K</td><td>$0.8K</td><td>$7.6K</td></tr>
-      <tr class="subtotal"><td><b>Total</b></td><td><b>$14.1K</b></td><td><b>$18.5K</b></td><td><b>$16.5K</b></td><td><b>$14.8K</b></td><td><b>$14.5K</b></td><td><b>$15.9K</b></td><td><b>$15.6K</b></td><td><b>$14.4K</b></td><td><b>$13.1K</b></td><td><b>$17.1K</b></td><td><b>$15.6K</b></td><td><b>$17.5K</b></td><td><b>$187.6K</b></td></tr>
-    </tbody>
-  </table>
-  </div>
-</div>
-
-<!-- Google Ads Campaigns table -->
-<div class="table-card" style="margin-bottom:16px">
-  <h3>Google Ads Campaigns</h3>
-  <table>
-    <thead>
-      <tr><th>Campaign</th><th>Status</th><th>Spend (USD)</th><th>Impressions</th><th>Clicks</th><th>Conversions</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>Website traffic-Display-1</td><td><span class="badge badge-yellow">PAUSED</span></td><td>$0.00</td><td>0</td><td>0</td><td>0.0</td></tr>
-      <tr><td>KM_domestic</td><td><span class="badge badge-yellow">PAUSED</span></td><td>$0.00</td><td>0</td><td>0</td><td>0.0</td></tr>
-      <tr><td>DT_Worldwide</td><td><span class="badge badge-yellow">PAUSED</span></td><td>$0.00</td><td>0</td><td>0</td><td>0.0</td></tr>
-      <tr><td>DT_leads(USA)</td><td><span class="badge badge-yellow">PAUSED</span></td><td>$0.00</td><td>0</td><td>0</td><td>0.0</td></tr>
-    </tbody>
-  </table>
-</div>
-
-<!-- ======================== 11. ONGOING & PLANNED INITIATIVES ======================== -->
-<div class="section-title">
-  <span class="section-icon" style="background:var(--blue-bg);color:var(--blue)">P</span>
-  Ongoing &amp; Planned Initiatives
-</div>
-
-<div class="dve-grid">
-  <div class="dve-card">
-    <h4 style="color:var(--green)">Ongoing</h4>
-    <ul class="initiative-list">
-      <li><span class="init-status" style="background:var(--green)"></span>Website redesign Phase 2  - mobile-first landing pages</li>
-      <li><span class="init-status" style="background:var(--green)"></span>AI chatbot integration for product demos on knowmax.ai</li>
-      <li><span class="init-status" style="background:var(--green)"></span>LinkedIn ABM campaign targeting Fortune 500 CX leaders</li>
-      <li><span class="init-status" style="background:var(--green)"></span>SEO content cluster buildout for &ldquo;knowledge management&rdquo;</li>
-      <li><span class="init-status" style="background:var(--green)"></span>KM Master Sheet data pipeline automation</li>
-    </ul>
-  </div>
-  <div class="dve-card">
-    <h4 style="color:var(--cyan)">Planned (Next Quarter)</h4>
-    <ul class="initiative-list">
-      <li><span class="init-status" style="background:var(--cyan)"></span>Launch partner co-marketing program (Q1 FY27)</li>
-      <li><span class="init-status" style="background:var(--cyan)"></span>Video testimonial series with 5 key customers</li>
-      <li><span class="init-status" style="background:var(--cyan)"></span>Implement llms.txt and AI-optimized content strategy</li>
-      <li><span class="init-status" style="background:var(--cyan)"></span>G2 and Gartner Peer Insights review campaign</li>
-      <li><span class="init-status" style="background:var(--cyan)"></span>Programmatic SEO for 200+ comparison pages</li>
-    </ul>
-  </div>
-</div>
-
-<!-- ======================== 12. COMPARE & ANALYZE ======================== -->
-<div class="section-title">
-  <span class="section-icon" style="background:rgba(168,85,247,0.15);color:var(--purple)">X</span>
-  Compare &amp; Analyze
-</div>
-
-<div class="period-tabs" style="margin-bottom:16px">
-  <button class="period-tab active" onclick="switchCompareMode('qq')">Q vs Q</button>
-  <button class="period-tab" onclick="switchCompareMode('dve')">Digital vs Events</button>
-  <button class="period-tab" onclick="switchCompareMode('spend')">Spend by Channel</button>
-  <button class="period-tab" onclick="switchCompareMode('yoy')">YoY</button>
-</div>
-
-<!-- Q vs Q panel -->
-<div id="compareQQ" class="compare-panel">
-  <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-    <select class="date-range" id="qq1" onchange="updateQuarterCompare()" style="min-width:140px">
-      <option value="q3" selected>Q3 (Oct-Dec)</option><option value="q2">Q2 (Jul-Sep)</option><option value="q1">Q1 (Apr-Jun)</option>
-    </select>
-    <span style="color:var(--text-muted);font-size:14px;align-self:center">vs</span>
-    <select class="date-range" id="qq2" onchange="updateQuarterCompare()" style="min-width:140px">
-      <option value="q4" selected>Q4 (Jan-Mar)</option><option value="q3">Q3 (Oct-Dec)</option><option value="q2">Q2 (Jul-Sep)</option><option value="q1">Q1 (Apr-Jun)</option>
-    </select>
-  </div>
-  <div class="table-card" style="margin-bottom:16px">
-    <h3>Quarter Comparison</h3>
-    <table id="qqTable">
-      <thead><tr><th>Metric</th><th id="qqH1">Q3</th><th id="qqH2">Q4</th><th>Change</th></tr></thead>
-      <tbody id="qqBody"></tbody>
-    </table>
-  </div>
-  <div class="chart-grid">
-    <div class="chart-card"><h3>Funnel Comparison</h3><div class="chart-container"><canvas id="qqFunnelChart"></canvas></div></div>
-    <div class="chart-card"><h3>Spend Comparison</h3><div class="chart-container"><canvas id="qqSpendChart"></canvas></div></div>
-  </div>
-</div>
-
-<!-- Digital vs Events panel -->
-<div id="compareDVE" class="compare-panel" style="display:none">
-  <div class="chart-grid">
-    <div class="chart-card"><h3>Digital vs Events: MQLs &amp; SQLs (Monthly)</h3><div class="chart-container"><canvas id="dveLeadsChart"></canvas></div></div>
-    <div class="chart-card"><h3>Digital vs Events: CPMQL Trend</h3><div class="chart-container"><canvas id="dveEffChart"></canvas></div></div>
-  </div>
-</div>
-
-<!-- Spend by Channel panel -->
-<div id="compareSpend" class="compare-panel" style="display:none">
-  <div class="chart-grid">
-    <div class="chart-card"><h3>Quarterly Spend by Category</h3><div class="chart-container"><canvas id="spendChannelChart"></canvas></div></div>
-    <div class="chart-card"><h3>Cost per SQL by Channel</h3><div class="chart-container"><canvas id="cpSqlChannelChart"></canvas></div></div>
-  </div>
-  <div class="table-card" style="margin-top:16px">
-    <h3>Channel Efficiency Table</h3>
-    <table>
-      <thead><tr><th>Channel</th><th>Spend</th><th>MQLs</th><th>SQLs</th><th>CPMQL</th><th>CPSQL</th><th>Efficiency</th></tr></thead>
-      <tbody>
-        <tr><td>Google Ads</td><td>$46,700</td><td>120</td><td>38</td><td>$389</td><td>$1,229</td><td><span class="badge badge-green">Good</span></td></tr>
-        <tr><td>LinkedIn Ads</td><td>$41,100</td><td>85</td><td>22</td><td>$483</td><td>$1,868</td><td><span class="badge badge-yellow">Fair</span></td></tr>
-        <tr><td>Content / SEO</td><td>$28,900</td><td>95</td><td>32</td><td>$304</td><td>$903</td><td><span class="badge badge-green">Best</span></td></tr>
-        <tr><td>Events</td><td>$28,500</td><td>60</td><td>18</td><td>$475</td><td>$1,583</td><td><span class="badge badge-yellow">Fair</span></td></tr>
-        <tr><td>Email</td><td>$9,600</td><td>40</td><td>12</td><td>$240</td><td>$800</td><td><span class="badge badge-green">Best</span></td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- YoY panel -->
-<div id="compareYOY" class="compare-panel" style="display:none">
-  <div class="chart-grid">
-    <div class="chart-card"><h3>Year over Year: MQLs</h3><div class="chart-container"><canvas id="yoyMqlChart"></canvas></div></div>
-    <div class="chart-card"><h3>Year over Year: Spend</h3><div class="chart-container"><canvas id="yoySpendChart"></canvas></div></div>
-  </div>
-</div>
-
-<!-- Footer -->
-<div style="text-align:center; padding:32px 0 16px; color:var(--text-muted); font-size:12px;">
-  Knowmax Marketing Dashboard - Generated: 2026-07-06 11:02 - Data: GA4 &middot; Google Ads &middot; KM Master Sheet &middot; Snov.io
+<div class="row"><div class="card"><h3>Pipeline Value by Stage</h3><div class="chart-box"><canvas id="stageValueChart"></canvas></div></div></div>
 </div>
 
 <script>
-Chart.defaults.color = '#8b8fa3';
-Chart.defaults.borderColor = '#2a2e3b';
-Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-Chart.defaults.font.size = 11;
+const D = {"generated": "2026-07-27", "kpis": {"sessions": 6904.0, "sessions_mom": -43.4, "users": 6199.0, "users_mom": -44.4, "pageviews": 10002.0, "pageviews_mom": -45.0, "bounce": 48.9, "bounce_mom": 9.1, "dr": 66.0, "org_keywords": 898, "org_traffic": 6937, "ad_spend": 0.0, "ad_clicks": 0, "leads": 1583, "pipeline": 12011623.0, "won_count": 6, "won_value": 666286.0, "snov_credits": 95920.0}, "ga4_trend": [{"month": "202508", "sessions": 23813, "users": 21067, "pageviews": 36167}, {"month": "202509", "sessions": 20063, "users": 16810, "pageviews": 31113}, {"month": "202510", "sessions": 18763, "users": 16153, "pageviews": 27914}, {"month": "202511", "sessions": 18164, "users": 16279, "pageviews": 24364}, {"month": "202512", "sessions": 16841, "users": 15173, "pageviews": 22546}, {"month": "202601", "sessions": 16852, "users": 15267, "pageviews": 35986}, {"month": "202602", "sessions": 11767, "users": 10281, "pageviews": 19720}, {"month": "202603", "sessions": 9722, "users": 8678, "pageviews": 15182}, {"month": "202604", "sessions": 11131, "users": 10208, "pageviews": 15112}, {"month": "202605", "sessions": 8710, "users": 7899, "pageviews": 13592}, {"month": "202606", "sessions": 12202, "users": 11142, "pageviews": 18184}, {"month": "202607", "sessions": 6904, "users": 6199, "pageviews": 10002}], "channels": [{"name": "Direct", "sessions": 3801}, {"name": "Organic Search", "sessions": 2638}, {"name": "Referral", "sessions": 406}, {"name": "Unassigned", "sessions": 121}, {"name": "Organic Social", "sessions": 39}, {"name": "AI Assistant", "sessions": 38}, {"name": "Paid Other", "sessions": 4}], "devices": [{"name": "desktop", "sessions": 5732}, {"name": "mobile", "sessions": 1224}, {"name": "tablet", "sessions": 12}, {"name": "smart tv", "sessions": 1}], "top_pages": [{"path": "/", "views": 2749, "sessions": 2282}, {"path": "/blog/customer-service-conversations/", "views": 305, "sessions": 266}, {"path": "/blog/data-vs-information-vs-knowledge/", "views": 284, "sessions": 249}, {"path": "/blog/examples-of-great-customer-service/", "views": 251, "sessions": 221}, {"path": "/blog/customer-service-strengths/", "views": 137, "sessions": 120}, {"path": "/blog/knowledge-management-best-practices/", "views": 134, "sessions": 132}, {"path": "/knowledge-management-platform/", "views": 132, "sessions": 106}, {"path": "/blog/sop-examples-for-customer-service/", "views": 126, "sessions": 124}, {"path": "/blog/", "views": 123, "sessions": 66}, {"path": "/blog/customer-care-scripts/", "views": 120, "sessions": 101}, {"path": "/blog/knowledge-management-process/", "views": 109, "sessions": 109}, {"path": "/blog/customer-service-responsibilities/", "views": 104, "sessions": 84}, {"path": "/blog/ai-call-center-software/", "views": 99, "sessions": 99}, {"path": "/case-studies/", "views": 92, "sessions": 29}, {"path": "/blog/call-center-operations/", "views": 91, "sessions": 88}, {"path": "/integration/", "views": 86, "sessions": 43}, {"path": "/knowmax/case-studies/", "views": 85, "sessions": 9}, {"path": "/contact-us/", "views": 84, "sessions": 79}, {"path": "/blog/ai-knowledge-management-tools/", "views": 80, "sessions": 78}, {"path": "/agentic-ai/", "views": 69, "sessions": 53}], "countries": [{"country": "India", "sessions": 60714, "users": 46409}, {"country": "United States", "sessions": 50590, "users": 46354}, {"country": "Philippines", "sessions": 16357, "users": 13983}, {"country": "South Africa", "sessions": 7662, "users": 6117}, {"country": "Singapore", "sessions": 7047, "users": 6678}, {"country": "China", "sessions": 6883, "users": 6774}, {"country": "Pakistan", "sessions": 5400, "users": 4096}, {"country": "Indonesia", "sessions": 5033, "users": 4568}, {"country": "United Kingdom", "sessions": 4646, "users": 4134}, {"country": "Canada", "sessions": 4278, "users": 3697}, {"country": "United Arab Emirates", "sessions": 3000, "users": 2667}, {"country": "Australia", "sessions": 2991, "users": 2590}, {"country": "Malaysia", "sessions": 2890, "users": 2503}, {"country": "Nigeria", "sessions": 2751, "users": 2345}, {"country": "Thailand", "sessions": 2592, "users": 2333}, {"country": "Germany", "sessions": 2592, "users": 2352}, {"country": "Egypt", "sessions": 2564, "users": 2129}, {"country": "Mexico", "sessions": 2497, "users": 2154}, {"country": "Vietnam", "sessions": 2271, "users": 2033}, {"country": "Netherlands", "sessions": 2268, "users": 2086}], "gsc": [{"month": "2025-08", "clicks": 14344, "impressions": 16569004, "ctr": 0.0865, "position": 12.97}, {"month": "2025-09", "clicks": 12576, "impressions": 9918352, "ctr": 0.1268, "position": 12.61}, {"month": "2025-10", "clicks": 11015, "impressions": 3254166, "ctr": 0.3384, "position": 12.99}, {"month": "2025-11", "clicks": 9010, "impressions": 2834210, "ctr": 0.3179, "position": 14.27}, {"month": "2025-12", "clicks": 7642, "impressions": 3192615, "ctr": 0.2393, "position": 18.5}, {"month": "2026-01", "clicks": 8341, "impressions": 3379264, "ctr": 0.2468, "position": 19.31}, {"month": "2026-02", "clicks": 3751, "impressions": 4421296, "ctr": 0.0848, "position": 12.78}, {"month": "2026-03", "clicks": 2870, "impressions": 3169537, "ctr": 0.0905, "position": 15.63}, {"month": "2026-04", "clicks": 2345, "impressions": 1404789, "ctr": 0.1669, "position": 22.02}, {"month": "2026-05", "clicks": 1982, "impressions": 1016394, "ctr": 0.195, "position": 29.06}, {"month": "2026-06", "clicks": 2241, "impressions": 1100475, "ctr": 0.2036, "position": 27.24}, {"month": "2026-07", "clicks": 250, "impressions": 121553, "ctr": 0.2056, "position": 25.62}], "keywords": [{"keyword": "faq", "volume": 16000, "best_position": 2, "sum_traffic": 844, "url": "https://knowmax.ai/blog/faq-page-examples/"}, {"keyword": "faq", "volume": 20000, "best_position": 2, "sum_traffic": 823, "url": "https://knowmax.ai/blog/faq-page-examples/"}, {"keyword": "knowmax", "volume": 600, "best_position": 1, "sum_traffic": 634, "url": "https://knowmax.ai/"}, {"keyword": "troubleshooting", "volume": 21000, "best_position": 2, "sum_traffic": 321, "url": "https://knowmax.ai/blog/troubleshooting-support/"}, {"keyword": "challenges", "volume": 25000, "best_position": 2, "sum_traffic": 156, "url": "https://knowmax.ai/blog/knowledge-management-challenges/"}, {"keyword": "faq", "volume": 4800, "best_position": 2, "sum_traffic": 85, "url": "https://knowmax.ai/blog/faq-page-examples/"}, {"keyword": "troubleshoot", "volume": 4500, "best_position": 2, "sum_traffic": 76, "url": "https://knowmax.ai/blog/troubleshooting-support/"}, {"keyword": "interactions", "volume": 6200, "best_position": 3, "sum_traffic": 74, "url": "https://knowmax.ai/blog/create-customer-interactions/"}, {"keyword": "knowmax", "volume": 70, "best_position": 1, "sum_traffic": 68, "url": "https://knowmax.ai/"}, {"keyword": "customer service resolution", "volume": 150, "best_position": 1, "sum_traffic": 56, "url": "https://knowmax.ai/blog/customer-service-resolution/"}, {"keyword": "customer engagement", "volume": 1200, "best_position": 2, "sum_traffic": 48, "url": "https://knowmax.ai/blog/digital-customer-engagement/"}, {"keyword": "data vs information vs knowledge", "volume": 70, "best_position": 2, "sum_traffic": 46, "url": "https://knowmax.ai/blog/data-vs-information-vs-knowledge/"}, {"keyword": "customer satisfaction in bpo", "volume": 100, "best_position": 1, "sum_traffic": 43, "url": "https://knowmax.ai/blog/customer-satisfaction-in-bpos/"}, {"keyword": "challenges", "volume": 600, "best_position": 2, "sum_traffic": 38, "url": "https://knowmax.ai/blog/knowledge-management-challenges/"}, {"keyword": "faq", "volume": 3700, "best_position": 2, "sum_traffic": 36, "url": "https://knowmax.ai/blog/faq-page-examples/"}, {"keyword": "role of customer service", "volume": 100, "best_position": 1, "sum_traffic": 36, "url": "https://knowmax.ai/blog/customer-service-responsibilities/"}, {"keyword": "troubleshooting", "volume": 2900, "best_position": 2, "sum_traffic": 34, "url": "https://knowmax.ai/blog/troubleshooting-support/"}, {"keyword": "how to handle angry customer", "volume": 1500, "best_position": 11, "sum_traffic": 34, "url": "https://knowmax.ai/blog/deal-with-angry-customers/"}, {"keyword": "customer service call center", "volume": 90, "best_position": 1, "sum_traffic": 33, "url": "https://knowmax.ai/blog/customer-service-call-center/"}, {"keyword": "legal knowledge management software", "volume": 300, "best_position": 5, "sum_traffic": 32, "url": "https://knowmax.ai/blog/legal-knowledge-management-software/"}], "seo_pages": [{"url": "https://knowmax.ai/blog/faq-page-examples/", "sum_traffic": 1972, "keywords": 8, "top_keyword": "faq", "top_keyword_best_position": 2}, {"url": "https://knowmax.ai/", "sum_traffic": 743, "keywords": 11, "top_keyword": "knowmax", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/troubleshooting-support/", "sum_traffic": 556, "keywords": 5, "top_keyword": "troubleshooting", "top_keyword_best_position": 2}, {"url": "https://knowmax.ai/blog/knowledge-management-challenges/", "sum_traffic": 343, "keywords": 9, "top_keyword": "challenges", "top_keyword_best_position": 2}, {"url": "https://knowmax.ai/blog/data-vs-information-vs-knowledge/", "sum_traffic": 229, "keywords": 37, "top_keyword": "data vs information vs knowledge", "top_keyword_best_position": 2}, {"url": "https://knowmax.ai/blog/create-customer-interactions/", "sum_traffic": 210, "keywords": 5, "top_keyword": "interactions", "top_keyword_best_position": 3}, {"url": "https://knowmax.ai/blog/customer-service-call-center/", "sum_traffic": 187, "keywords": 43, "top_keyword": "customer service call center", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/customer-service-conversations/", "sum_traffic": 186, "keywords": 49, "top_keyword": "customer service conversation script", "top_keyword_best_position": 5}, {"url": "https://knowmax.ai/blog/customer-care-scripts/", "sum_traffic": 164, "keywords": 70, "top_keyword": "call center script in english", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/digital-customer-engagement/", "sum_traffic": 155, "keywords": 8, "top_keyword": "customer engagement", "top_keyword_best_position": 2}, {"url": "https://knowmax.ai/blog/deal-with-angry-customers/", "sum_traffic": 118, "keywords": 50, "top_keyword": "how to handle angry customer", "top_keyword_best_position": 11}, {"url": "https://knowmax.ai/blog/customer-service-responsibilities/", "sum_traffic": 115, "keywords": 38, "top_keyword": "role of customer service", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/step-by-step-guide/", "sum_traffic": 113, "keywords": 11, "top_keyword": "step by step guide", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/types-of-knowledge-management/", "sum_traffic": 102, "keywords": 44, "top_keyword": "types", "top_keyword_best_position": 6}, {"url": "https://knowmax.ai/blog/customer-service-problems/", "sum_traffic": 102, "keywords": 13, "top_keyword": "customer service problems", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/customer-engagement-platform/", "sum_traffic": 91, "keywords": 3, "top_keyword": "customer engagement platform", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/create-inbound-call-center-scripting/", "sum_traffic": 87, "keywords": 19, "top_keyword": "call center script sample", "top_keyword_best_position": 8}, {"url": "https://knowmax.ai/blog/components-of-knowledge-management/", "sum_traffic": 65, "keywords": 9, "top_keyword": "key components", "top_keyword_best_position": 2}, {"url": "https://knowmax.ai/blog/customer-service-resolution/", "sum_traffic": 60, "keywords": 4, "top_keyword": "customer service resolution", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/sop-examples-for-customer-service/", "sum_traffic": 50, "keywords": 22, "top_keyword": "call center sop", "top_keyword_best_position": 7}], "ads_trend": [{"month": "2025-10-01", "spend_usd": 129.91, "clicks": 207, "impressions": 2885}, {"month": "2025-11-01", "spend_usd": 279.75, "clicks": 506, "impressions": 8467}, {"month": "2025-12-01", "spend_usd": 48.19, "clicks": 8, "impressions": 162}], "campaigns": [{"name": "USA & Canada Ads 2025", "status": "PAUSED", "spend_usd": 236.46, "clicks": 441, "impressions": 8561, "conversions": 1.0}, {"name": "Knowmax Remarketing Ads", "status": "PAUSED", "spend_usd": 163.68, "clicks": 32, "impressions": 442, "conversions": 9.0}, {"name": "ME, SEA, SG & PH Ads 2025", "status": "PAUSED", "spend_usd": 57.72, "clicks": 248, "impressions": 2511, "conversions": 3.0}], "leads_status": {"New": 1505, "Contacted": 34, "Unknown": 31, "Not Relevant": 7, "In Process": 3, "Pre-Qualified": 1, "Not Interested": 1, "Junk Lead": 1}, "leads_source": {"Website/Digital": 1077, "Web - Enquiry": 388, "Dripify": 63, "Calendly Meeting": 30, "Web - Brochure Download": 7, "MS Booking": 7, "Unknown": 5, "Partner / Alliances": 3, "Calendly": 1, "Chat": 1, "Inside Sales": 1}, "leads_owner": {"Team Knowmax": 494, "Pratik Salia": 396, "Rahul Dhanak": 363, "Rishu Kapoor": 185, "Alan Palacios": 145}, "deals_stage": {"Closed (Dropped)": 30, "Qualification": 11, "Needs Analysis": 10, "Proposal/Price Quote": 9, "Identify Decision Makers": 7, "Closed (Won)": 6, "Value Proposition": 4, "Closed (Lost)": 4, "Negotiation/Review": 2}, "stage_values": {"Proposal/Price Quote": 1862316.0, "Closed (Dropped)": 8935693.0, "Qualification": 469814.0, "Identify Decision Makers": 246000.0, "Value Proposition": 125000.0, "Needs Analysis": 290000.0, "Closed (Lost)": 161500.0, "Negotiation/Review": 82800.0, "Closed (Won)": 666286.0}};
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.borderColor = '#334155';
+Chart.defaults.font.family = "'Segoe UI',system-ui,sans-serif";
+const PALETTE = ['#38bdf8','#4ade80','#fbbf24','#a78bfa','#fb923c','#f87171','#2dd4bf','#e879f9','#a3e635','#fca5a5','#7dd3fc','#fde047'];
+const fmt = n => n >= 1e6 ? (n/1e6).toFixed(2)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'K' : (typeof n === 'number' ? n.toLocaleString() : n);
+const money = n => '$' + Number(n).toLocaleString(undefined, {maximumFractionDigits: 0});
 
-const months = ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"];
-const chartInstances = {};
-
-// -------- 1. TRAFFIC CHART --------
-chartInstances.trafficChart = new Chart(document.getElementById('trafficChart'), {
-  type: 'line',
-  data: {
-    labels: months,
-    datasets: [
-      { label: 'Total Users', data: [22123, 21693, 23406, 24404, 21067, 16810, 16153, 16279, 15173, 15267, 10281, 8678], borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.08)', fill: true, tension: 0.4 },
-      { label: 'New Users', data: [21175, 20675, 23381, 24279, 21135, 16469, 15653, 15586, 14392, 14925, 10050, 8364], borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.08)', fill: true, tension: 0.4 }
-    ]
-  },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: false, grid: { color: '#1e2130' } }, x: { grid: { display: false } } } }
-});
-
-// -------- 2. CLICKS vs IMPRESSIONS (Mock GSC) --------
-chartInstances.clicksImpChart = new Chart(document.getElementById('clicksImpChart'), {
-  type: 'line',
-  data: {
-    labels: months,
-    datasets: [
-      { label: 'Clicks', data: [420,480,510,490,460,380,350,320,280,300,290,268], borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.08)', fill: false, tension: 0.4, yAxisID: 'y' },
-      { label: 'Impressions (K)', data: [850,920,980,940,880,780,720,680,580,620,410,379], borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,0.08)', fill: false, tension: 0.4, yAxisID: 'y1' }
-    ]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { position: 'top' } },
-    scales: {
-      y: { type: 'linear', position: 'left', title: { display: true, text: 'Clicks' }, grid: { color: '#1e2130' } },
-      y1: { type: 'linear', position: 'right', title: { display: true, text: 'Impressions (K)' }, grid: { drawOnChartArea: false } },
-      x: { grid: { display: false } }
-    }
+// ---- KPI cards ----
+const k = D.kpis;
+const kpiDefs = [
+  ['Sessions', fmt(k.sessions), k.sessions_mom, false],
+  ['Users', fmt(k.users), k.users_mom, false],
+  ['Pageviews', fmt(k.pageviews), k.pageviews_mom, false],
+  ['Bounce Rate', k.bounce + '%', k.bounce_mom, true],
+  ['Domain Rating', k.dr, null],
+  ['Organic Keywords', fmt(k.org_keywords), null],
+  ['Organic Traffic /mo', fmt(k.org_traffic), null],
+  ['Ad Spend (Jul)', money(k.ad_spend), null],
+  ['Ad Clicks (Jul)', fmt(k.ad_clicks), null],
+  ['Total Leads', fmt(k.leads), null],
+  ['Pipeline Value', money(k.pipeline), null],
+  ['Won Deals', k.won_count + ' (' + money(k.won_value) + ')', null],
+  ['Snov Credits', fmt(k.snov_credits), null],
+];
+document.getElementById('kpis').innerHTML = kpiDefs.map(([label, val, momv, invert]) => {
+  let delta = '';
+  if (momv !== null && momv !== undefined) {
+    const good = invert ? momv <= 0 : momv >= 0;
+    delta = `<div class="delta ${good ? 'up' : 'down'}">${momv > 0 ? '▲' : momv < 0 ? '▼' : '•'} ${Math.abs(momv)}% MoM</div>`;
   }
-});
+  return `<div class="kpi"><div class="label">${label}</div><div class="value">${val}</div>${delta}</div>`;
+}).join('');
 
-// -------- 3. CONTENT CHART --------
-chartInstances.contentChart = new Chart(document.getElementById('contentChart'), {
-  type: 'bar',
-  data: {
-    labels: ['Blog Posts','Whitepapers','Case Studies','Landing Pages','Videos','Infographics','Social Posts'],
-    datasets: [
-      { label: 'Planned', data: [8,2,2,3,2,2,15], backgroundColor: 'rgba(99,102,241,0.6)' },
-      { label: 'Achieved', data: [10,2,1,4,1,3,12], backgroundColor: 'rgba(34,197,94,0.6)' }
-    ]
-  },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, grid: { color: '#1e2130' } }, x: { grid: { display: false } } } }
-});
+// ---- Tabs ----
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById(t.dataset.p).classList.add('active');
+}));
 
-// -------- 4. EMAIL CHART --------
-chartInstances.emailChart = new Chart(document.getElementById('emailChart'), {
-  type: 'bar',
-  data: {
-    labels: ['US Enterprise Q4','APAC Mid-Market','EU GDPR','BPO Leaders','Newsletter Mar'],
-    datasets: [
-      { label: 'Open Rate %', data: [35,32,33,36,30], backgroundColor: 'rgba(99,102,241,0.6)' },
-      { label: 'Click Rate %', data: [8.2,6.5,7.1,7.8,4.0], backgroundColor: 'rgba(6,182,212,0.6)' },
-      { label: 'Reply Rate %', data: [3.0,2.3,2.5,2.9,0], backgroundColor: 'rgba(168,85,247,0.6)' }
-    ]
-  },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, grid: { color: '#1e2130' }, ticks: { callback: function(v) { return v + '%'; } } }, x: { grid: { display: false } } } }
-});
+const ym = s => { const [y, mo] = [s.slice(0,4), s.slice(4,6) || s.slice(5,7)];
+  return ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mo] + ' ' + y.slice(2); };
 
-// -------- 5. FUNNEL CHART --------
-chartInstances.funnelChart = new Chart(document.getElementById('funnelChart'), {
-  type: 'bar',
-  data: {
-    labels: months,
-    datasets: [
-      { label: 'Form Fills', data: [85,92,110,105,120,130,88,75,65,78,92,198], backgroundColor: 'rgba(59,130,246,0.6)' },
-      { label: 'MQLs', data: [18,20,24,22,28,30,20,18,15,20,22,38], backgroundColor: 'rgba(168,85,247,0.6)' },
-      { label: 'SQLs', data: [6,7,8,7,9,10,7,6,5,7,10,13], backgroundColor: 'rgba(34,197,94,0.6)' }
-    ]
-  },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, grid: { color: '#1e2130' } }, x: { grid: { display: false } } } }
-});
+// ---- Traffic chart ----
+new Chart(trafficChart, {data: {
+  labels: D.ga4_trend.map(r => ym(r.month)),
+  datasets: [
+    {type: 'bar', label: 'Sessions', data: D.ga4_trend.map(r => r.sessions), backgroundColor: '#38bdf8aa', borderRadius: 4},
+    {type: 'bar', label: 'Users', data: D.ga4_trend.map(r => r.users), backgroundColor: '#a78bfaaa', borderRadius: 4},
+    {type: 'line', label: 'Pageviews', data: D.ga4_trend.map(r => r.pageviews), borderColor: '#fbbf24', tension: .3, pointRadius: 3}
+  ]}, options: {maintainAspectRatio: false}});
 
-// -------- 6. CPMQL & CPSQL TREND --------
-chartInstances.cpChart = new Chart(document.getElementById('cpChart'), {
-  type: 'line',
-  data: {
-    labels: months,
-    datasets: [
-      { label: 'CPMQL', data: [520,480,460,490,420,400,480,510,540,475,390,461], borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.08)', fill: false, tension: 0.4 },
-      { label: 'CPSQL', data: [1560,1340,1280,1380,1200,1150,1380,1450,1520,1350,916,1346], borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.08)', fill: false, tension: 0.4 }
-    ]
-  },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: false, grid: { color: '#1e2130' }, ticks: { callback: function(v) { return '$' + v; } } }, x: { grid: { display: false } } } }
-});
+const donut = (el, entries) => new Chart(el, {type: 'doughnut',
+  data: {labels: entries.map(e => e.name), datasets: [{data: entries.map(e => e.sessions), backgroundColor: PALETTE, borderColor: '#1e293b', borderWidth: 2}]},
+  options: {maintainAspectRatio: false, plugins: {legend: {position: 'right'}}}});
+donut(channelChart, D.channels);
+donut(deviceChart, D.devices);
 
-// -------- 7. ARR BY CHANNEL --------
-chartInstances.arrChart = new Chart(document.getElementById('arrChart'), {
-  type: 'bar',
-  data: {
-    labels: ['Q1','Q2','Q3','Q4'],
-    datasets: [
-      { label: 'Digital', data: [180000,220000,280000,350000], backgroundColor: 'rgba(59,130,246,0.7)' },
-      { label: 'Events', data: [120000,150000,180000,220000], backgroundColor: 'rgba(249,115,22,0.7)' },
-      { label: 'Referral', data: [80000,95000,110000,140000], backgroundColor: 'rgba(34,197,94,0.7)' }
-    ]
-  },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { stacked: true, beginAtZero: true, grid: { color: '#1e2130' }, ticks: { callback: function(v) { return '$' + (v/1000) + 'K'; } } }, x: { stacked: true, grid: { display: false } } } }
-});
+const table = (el, head, rows) => document.getElementById(el).innerHTML =
+  '<tr>' + head.map((h, i) => `<th class="${i ? 'num' : ''}">${h}</th>`).join('') + '</tr>' +
+  rows.map(r => '<tr>' + r.map((c, i) => `<td class="${i ? 'num' : ''}">${c}</td>`).join('') + '</tr>').join('');
 
-// -------- 8. SPEND TREND (stacked) --------
-chartInstances.spendTrendChart = new Chart(document.getElementById('spendTrendChart'), {
-  type: 'bar',
-  data: {
-    labels: months,
-    datasets: [
-      { label: 'Google Ads', data: [3800,4100,4500,4200,3900,4000,3600,3800,3200,3500,3900,4200], backgroundColor: '#3b82f6' },
-      { label: 'LinkedIn Ads', data: [3200,3500,3800,3600,3400,3500,3200,3400,3000,3200,3500,3800], backgroundColor: '#6366f1' },
-      { label: 'Content', data: [2200,2400,2600,2500,2300,2400,2200,2500,2000,2400,2600,2800], backgroundColor: '#22c55e' },
-      { label: 'Events', data: [1500,5000,2000,1000,1500,2500,3000,1000,1500,4500,2000,3000], backgroundColor: '#f97316' },
-      { label: 'Other', data: [2900,3000,3100,3000,2900,3000,2900,3000,2500,2900,3100,3200], backgroundColor: '#8b8fa3' }
-    ]
-  },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { stacked: true, beginAtZero: true, grid: { color: '#1e2130' }, ticks: { callback: function(v) { return '$' + (v/1000) + 'K'; } } }, x: { stacked: true, grid: { display: false } } } }
-});
+table('countryTable', ['Country', 'Sessions', 'Users'], D.countries.map(c => [c.country, fmt(c.sessions), fmt(c.users)]));
+table('pageTable', ['Page', 'Views', 'Sessions'], D.top_pages.map(p => [p.path.length > 45 ? p.path.slice(0, 45) + '…' : p.path, fmt(p.views), fmt(p.sessions)]));
 
-// -------- 9. SPEND DONUT --------
-chartInstances.spendDonutChart = new Chart(document.getElementById('spendDonutChart'), {
-  type: 'doughnut',
-  data: {
-    labels: ['Google Ads','LinkedIn Ads','Content','Events','SEO Tools','Email Tools','Design','Misc'],
-    datasets: [{ data: [46700,41100,28900,28500,14400,9600,10800,7600], backgroundColor: ['#3b82f6','#6366f1','#22c55e','#f97316','#06b6d4','#a855f7','#ec4899','#eab308'] }]
-  },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, padding: 10 } } } }
-});
+// ---- GSC chart ----
+new Chart(gscChart, {data: {
+  labels: D.gsc.map(r => ym(r.month.replace('-', ''))),
+  datasets: [
+    {type: 'bar', label: 'Clicks', data: D.gsc.map(r => r.clicks), backgroundColor: '#4ade80aa', borderRadius: 4, yAxisID: 'y'},
+    {type: 'line', label: 'Impressions', data: D.gsc.map(r => r.impressions), borderColor: '#38bdf8', tension: .3, yAxisID: 'y1', pointRadius: 3}
+  ]}, options: {maintainAspectRatio: false, scales: {y: {position: 'left', title: {display: true, text: 'Clicks'}}, y1: {position: 'right', grid: {drawOnChartArea: false}, title: {display: true, text: 'Impressions'}}}}});
 
-// -------- 10. SPEND VS ARR --------
-chartInstances.spendVsArrChart = new Chart(document.getElementById('spendVsArrChart'), {
-  type: 'line',
-  data: {
-    labels: months,
-    datasets: [
-      { label: 'Cumulative Spend ($K)', data: [14.1,32.6,49.1,63.9,78.4,94.3,109.9,124.3,137.4,154.5,170.1,187.6], borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.08)', fill: false, tension: 0.4, yAxisID: 'y' },
-      { label: 'Pipeline ARR ($K)', data: [380,465,535,680,780,920,1050,1180,1320,1560,1840,2393], borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.08)', fill: false, tension: 0.4, yAxisID: 'y1' }
-    ]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { position: 'top' } },
-    scales: {
-      y: { type: 'linear', position: 'left', title: { display: true, text: 'Spend ($K)' }, grid: { color: '#1e2130' } },
-      y1: { type: 'linear', position: 'right', title: { display: true, text: 'ARR ($K)' }, grid: { drawOnChartArea: false } },
-      x: { grid: { display: false } }
-    }
-  }
-});
+const short = u => u.replace('https://knowmax.ai', '') || '/';
+table('kwTable', ['Keyword', 'Volume', 'Pos', 'Traffic'], D.keywords.map(kw => [kw.keyword, fmt(kw.volume), kw.best_position, fmt(kw.sum_traffic)]));
+table('seoPageTable', ['Page', 'Traffic', 'KWs', 'Top KW (pos)'], D.seo_pages.map(p => [`<a href="${p.url}" target="_blank">${short(p.url).slice(0, 40)}</a>`, fmt(p.sum_traffic), p.keywords, `${p.top_keyword} (${p.top_keyword_best_position})`]));
 
-// -------- 11. MONTHLY LEADS (KM Master Sheet) --------
-chartInstances.leadsChart = new Chart(document.getElementById('leadsChart'), {
-  type: 'bar',
-  data: {
-    labels: months,
-    datasets: [{ label: 'Leads', data: [86, 70, 90, 95, 72, 108, 55, 28, 44, 37, 18, 11], backgroundColor: 'rgba(34,197,94,0.7)' }]
-  },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, grid: { color: '#1e2130' } }, x: { grid: { display: false } } } }
-});
+// ---- Ads ----
+new Chart(spendChart, {type: 'bar', data: {
+  labels: D.ads_trend.map(r => ym(r.month.slice(0, 7).replace('-', ''))),
+  datasets: [{label: 'Spend (USD)', data: D.ads_trend.map(r => r.spend_usd), backgroundColor: '#fb923caa', borderRadius: 4}]},
+  options: {maintainAspectRatio: false}});
+table('campTable', ['Campaign', 'Status', 'Spend', 'Clicks', 'Impr.', 'Conv.'],
+  D.campaigns.map(c => [c.name, `<span class="badge">${c.status}</span>`, money(c.spend_usd), fmt(c.clicks), fmt(c.impressions), c.conversions]));
 
-// -------- 12. GOOGLE ADS SPEND (REAL) --------
-(function() {
-  const adsMonthly = {"2025-10-01": {"spend_inr": 10977.578836, "spend_usd": 129.91, "impressions": 2885, "clicks": 207, "conversions": 1.0}, "2025-11-01": {"spend_inr": 23638.700174999998, "spend_usd": 279.75, "impressions": 8467, "clicks": 506, "conversions": 12.0}, "2025-12-01": {"spend_inr": 4072.23, "spend_usd": 48.19, "impressions": 162, "clicks": 8, "conversions": 0.0}};
-  const monthMap = {
-    '2025-04-01': 'Apr', '2025-05-01': 'May', '2025-06-01': 'Jun',
-    '2025-07-01': 'Jul', '2025-08-01': 'Aug', '2025-09-01': 'Sep',
-    '2025-10-01': 'Oct', '2025-11-01': 'Nov', '2025-12-01': 'Dec',
-    '2026-01-01': 'Jan', '2026-02-01': 'Feb', '2026-03-01': 'Mar'
-  };
-  const spendData = months.map(function(m) {
-    for (const [k, v] of Object.entries(adsMonthly)) {
-      if (monthMap[k] === m) return Math.round(v.spend_usd);
-    }
-    return 0;
-  });
-  chartInstances.adsSpendChart = new Chart(document.getElementById('adsSpendChart'), {
-    type: 'bar',
-    data: {
-      labels: months,
-      datasets: [{ label: 'Google Ads Spend (USD)', data: spendData, backgroundColor: 'rgba(249,115,22,0.7)' }]
-    },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, grid: { color: '#1e2130' }, ticks: { callback: function(v) { return '$' + v; } } }, x: { grid: { display: false } } } }
-  });
-})();
-
-// ============== COMPARE & ANALYZE CHARTS ==============
-
-// Quarter data (mock)
-const quarterData = {
-  q1: { label: 'Q1 (Apr-Jun)', formFills: 287, mqls: 62, sqls: 21, spend: 49100, arr: 535000, cpmql: 481, cpsql: 1419 },
-  q2: { label: 'Q2 (Jul-Sep)', formFills: 355, mqls: 80, sqls: 26, spend: 47800, arr: 920000, cpmql: 398, cpsql: 1223 },
-  q3: { label: 'Q3 (Oct-Dec)', formFills: 228, mqls: 53, sqls: 18, spend: 43100, arr: 1320000, cpmql: 513, cpsql: 1506 },
-  q4: { label: 'Q4 (Jan-Mar)', formFills: 368, mqls: 80, sqls: 30, spend: 47600, arr: 2393000, cpmql: 433, cpsql: 1153 }
+// ---- CRM horizontal bars ----
+const hbar = (el, obj, color, isMoney) => {
+  const entries = Object.entries(obj).slice(0, 12);
+  new Chart(el, {type: 'bar', data: {labels: entries.map(e => e[0]),
+    datasets: [{data: entries.map(e => e[1]), backgroundColor: color, borderRadius: 4}]},
+    options: {indexAxis: 'y', maintainAspectRatio: false, plugins: {legend: {display: false},
+      tooltip: {callbacks: {label: c => isMoney ? money(c.raw) : fmt(c.raw)}}}}});
 };
-
-// 13. QQ Funnel
-chartInstances.qqFunnelChart = new Chart(document.getElementById('qqFunnelChart'), {
-  type: 'bar',
-  data: { labels: ['Form Fills','MQLs','SQLs'], datasets: [] },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, grid: { color: '#1e2130' } }, x: { grid: { display: false } } } }
-});
-
-// 14. QQ Spend
-chartInstances.qqSpendChart = new Chart(document.getElementById('qqSpendChart'), {
-  type: 'bar',
-  data: { labels: ['Total Spend','CPMQL','CPSQL'], datasets: [] },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, grid: { color: '#1e2130' }, ticks: { callback: function(v) { return '$' + v; } } }, x: { grid: { display: false } } } }
-});
-
-function updateQuarterCompare() {
-  const q1Key = document.getElementById('qq1').value;
-  const q2Key = document.getElementById('qq2').value;
-  const d1 = quarterData[q1Key];
-  const d2 = quarterData[q2Key];
-  if (!d1 || !d2) return;
-  document.getElementById('qqH1').textContent = d1.label;
-  document.getElementById('qqH2').textContent = d2.label;
-  const metrics = [
-    ['Form Fills', d1.formFills, d2.formFills],
-    ['MQLs', d1.mqls, d2.mqls],
-    ['SQLs', d1.sqls, d2.sqls],
-    ['Spend', '$' + d1.spend.toLocaleString(), '$' + d2.spend.toLocaleString()],
-    ['CPMQL', '$' + d1.cpmql, '$' + d2.cpmql],
-    ['CPSQL', '$' + d1.cpsql, '$' + d2.cpsql],
-    ['Pipeline ARR', '$' + d1.arr.toLocaleString(), '$' + d2.arr.toLocaleString()]
-  ];
-  let tbody = '';
-  metrics.forEach(function(row) {
-    const v1 = typeof row[1] === 'number' ? row[1] : parseFloat(String(row[1]).replace(/[$,]/g, ''));
-    const v2 = typeof row[2] === 'number' ? row[2] : parseFloat(String(row[2]).replace(/[$,]/g, ''));
-    let chg = v1 === 0 ? '-' : ((v2 - v1) / v1 * 100).toFixed(1) + '%';
-    const cls = v2 > v1 ? 'up' : v2 < v1 ? 'down' : 'flat';
-    tbody += '<tr><td>' + row[0] + '</td><td>' + (typeof row[1] === 'number' ? row[1].toLocaleString() : row[1]) + '</td><td>' + (typeof row[2] === 'number' ? row[2].toLocaleString() : row[2]) + '</td><td><span class="change ' + cls + '">' + chg + '</span></td></tr>';
-  });
-  document.getElementById('qqBody').innerHTML = tbody;
-  // Update charts
-  const fc = chartInstances.qqFunnelChart;
-  fc.data.datasets = [
-    { label: d1.label, data: [d1.formFills, d1.mqls, d1.sqls], backgroundColor: 'rgba(99,102,241,0.6)' },
-    { label: d2.label, data: [d2.formFills, d2.mqls, d2.sqls], backgroundColor: 'rgba(34,197,94,0.6)' }
-  ];
-  fc.update();
-  const sc = chartInstances.qqSpendChart;
-  sc.data.datasets = [
-    { label: d1.label, data: [d1.spend, d1.cpmql, d1.cpsql], backgroundColor: 'rgba(99,102,241,0.6)' },
-    { label: d2.label, data: [d2.spend, d2.cpmql, d2.cpsql], backgroundColor: 'rgba(34,197,94,0.6)' }
-  ];
-  sc.update();
-}
-updateQuarterCompare();
-
-// 15. DVE Leads Chart
-chartInstances.dveLeadsChart = new Chart(document.getElementById('dveLeadsChart'), {
-  type: 'bar',
-  data: {
-    labels: months,
-    datasets: [
-      { label: 'Digital MQLs', data: [14,16,19,17,22,24,16,14,12,16,17,28], backgroundColor: 'rgba(59,130,246,0.6)' },
-      { label: 'Events MQLs', data: [4,4,5,5,6,6,4,4,3,4,5,10], backgroundColor: 'rgba(249,115,22,0.6)' },
-      { label: 'Digital SQLs', data: [5,5,6,5,7,8,5,4,4,5,8,9], backgroundColor: 'rgba(59,130,246,0.3)' },
-      { label: 'Events SQLs', data: [1,2,2,2,2,2,2,2,1,2,2,4], backgroundColor: 'rgba(249,115,22,0.3)' }
-    ]
-  },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, grid: { color: '#1e2130' } }, x: { grid: { display: false } } } }
-});
-
-// 16. DVE Efficiency
-chartInstances.dveEffChart = new Chart(document.getElementById('dveEffChart'), {
-  type: 'line',
-  data: {
-    labels: months,
-    datasets: [
-      { label: 'Digital CPMQL', data: [490,450,430,470,400,380,460,490,520,460,380,410], borderColor: '#3b82f6', fill: false, tension: 0.4 },
-      { label: 'Events CPMQL', data: [620,580,560,590,540,520,600,630,650,590,500,580], borderColor: '#f97316', fill: false, tension: 0.4 }
-    ]
-  },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: false, grid: { color: '#1e2130' }, ticks: { callback: function(v) { return '$' + v; } } }, x: { grid: { display: false } } } }
-});
-
-// 17. Spend by Channel (Quarterly)
-chartInstances.spendChannelChart = new Chart(document.getElementById('spendChannelChart'), {
-  type: 'bar',
-  data: {
-    labels: ['Q1','Q2','Q3','Q4'],
-    datasets: [
-      { label: 'Google Ads', data: [12400,12100,10600,11600], backgroundColor: '#3b82f6' },
-      { label: 'LinkedIn Ads', data: [10500,10500,9600,10500], backgroundColor: '#6366f1' },
-      { label: 'Content', data: [7200,7200,6700,7800], backgroundColor: '#22c55e' },
-      { label: 'Events', data: [8500,5000,5500,9500], backgroundColor: '#f97316' },
-      { label: 'Other', data: [10500,9500,9600,10200], backgroundColor: '#8b8fa3' }
-    ]
-  },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { stacked: true, beginAtZero: true, grid: { color: '#1e2130' }, ticks: { callback: function(v) { return '$' + (v/1000) + 'K'; } } }, x: { stacked: true, grid: { display: false } } } }
-});
-
-// 18. Cost per SQL by Channel (horizontal)
-chartInstances.cpSqlChannelChart = new Chart(document.getElementById('cpSqlChannelChart'), {
-  type: 'bar',
-  data: {
-    labels: ['Email','Content/SEO','Google Ads','Events','LinkedIn Ads'],
-    datasets: [{ label: 'Cost per SQL ($)', data: [800,903,1229,1583,1868], backgroundColor: ['#a855f7','#22c55e','#3b82f6','#f97316','#6366f1'] }]
-  },
-  options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: '#1e2130' }, ticks: { callback: function(v) { return '$' + v; } } }, y: { grid: { display: false } } } }
-});
-
-// 19. YoY MQLs
-chartInstances.yoyMqlChart = new Chart(document.getElementById('yoyMqlChart'), {
-  type: 'line',
-  data: {
-    labels: months,
-    datasets: [
-      { label: 'FY 25-26', data: [18,20,24,22,28,30,20,18,15,20,22,38], borderColor: '#6366f1', fill: false, tension: 0.4 },
-      { label: 'FY 25-26', data: [12,14,16,15,18,20,14,12,10,14,16,24], borderColor: '#8b8fa3', borderDash: [5,5], fill: false, tension: 0.4 }
-    ]
-  },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: true, grid: { color: '#1e2130' } }, x: { grid: { display: false } } } }
-});
-
-// 20. YoY Spend
-chartInstances.yoySpendChart = new Chart(document.getElementById('yoySpendChart'), {
-  type: 'line',
-  data: {
-    labels: months,
-    datasets: [
-      { label: 'FY 25-26', data: [14100,18500,16500,14800,14500,15900,15600,14400,13100,17100,15600,17500], borderColor: '#ef4444', fill: false, tension: 0.4 },
-      { label: 'FY 25-26', data: [11000,14000,13000,12000,11500,12500,12500,11500,10500,13500,12500,14000], borderColor: '#8b8fa3', borderDash: [5,5], fill: false, tension: 0.4 }
-    ]
-  },
-  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: false, grid: { color: '#1e2130' }, ticks: { callback: function(v) { return '$' + (v/1000) + 'K'; } } }, x: { grid: { display: false } } } }
-});
-
-// ============== COMPARE MODE SWITCHER ==============
-function switchCompareMode(mode) {
-  const panels = { qq: 'compareQQ', dve: 'compareDVE', spend: 'compareSpend', yoy: 'compareYOY' };
-  Object.values(panels).forEach(function(id) { document.getElementById(id).style.display = 'none'; });
-  document.getElementById(panels[mode]).style.display = 'block';
-  document.querySelectorAll('.period-tab').forEach(function(btn) { btn.classList.remove('active'); });
-  event.target.classList.add('active');
-  // Resize charts in the shown panel to fix canvas sizing
-  setTimeout(function() {
-    Object.values(chartInstances).forEach(function(c) { if (c && c.resize) c.resize(); });
-  }, 100);
-}
-
-// ============== KM MASTER SHEET DATA (FY 25-26) ==============
-const KM_SUMMARY = {"fy": {"mql": 714, "sql": 143, "arr": 13830000, "sp_excl": 65410, "sp_incl": 188550, "deals": 11}, "h1": {"mql": 521, "sql": 113, "arr": 12230000, "sp_excl": 46900, "sp_incl": 105600, "deals": 8}, "h2": {"mql": 193, "sql": 30, "arr": 1600000, "sp_excl": 18510, "sp_incl": 82950, "deals": 3}, "q1": {"mql": 246, "sql": 30, "arr": 1170000, "sp_excl": 8300, "sp_incl": 36100, "deals": 4}, "q2": {"mql": 275, "sql": 83, "arr": 11060000, "sp_excl": 38600, "sp_incl": 69500, "deals": 4}, "q3": {"mql": 127, "sql": 23, "arr": 1020000, "sp_excl": 17550, "sp_incl": 49450, "deals": 2}, "q4": {"mql": 66, "sql": 7, "arr": 582100, "sp_excl": 959, "sp_incl": 33500, "deals": 1}, "apr": {"mql": 86, "sql": 4, "arr": 223000, "sp_excl": 975, "sp_incl": 10200, "deals": 1}, "may": {"mql": 70, "sql": 9, "arr": 126700, "sp_excl": 823, "sp_incl": 10000, "deals": 1}, "jun": {"mql": 90, "sql": 17, "arr": 820600, "sp_excl": 6500, "sp_incl": 15900, "deals": 1}, "jul": {"mql": 95, "sql": 22, "arr": 2510000, "sp_excl": 2900, "sp_incl": 12800, "deals": 1}, "aug": {"mql": 72, "sql": 19, "arr": 1270000, "sp_excl": 6400, "sp_incl": 16900, "deals": 1}, "sep": {"mql": 108, "sql": 42, "arr": 7280000, "sp_excl": 29300, "sp_incl": 39800, "deals": 2}, "oct": {"mql": 55, "sql": 7, "arr": 284000, "sp_excl": 950, "sp_incl": 11450, "deals": 1}, "nov": {"mql": 28, "sql": 4, "arr": 227500, "sp_excl": 10500, "sp_incl": 21000, "deals": 0}, "dec": {"mql": 44, "sql": 12, "arr": 505600, "sp_excl": 6100, "sp_incl": 17000, "deals": 1}, "jan": {"mql": 37, "sql": 3, "arr": 258400, "sp_excl": 495, "sp_incl": 11300, "deals": 1}, "feb": {"mql": 18, "sql": 2, "arr": 265400, "sp_excl": 239, "sp_incl": 11100, "deals": 0}, "mar": {"mql": 11, "sql": 2, "arr": 58320, "sp_excl": 225, "sp_incl": 11100, "deals": 0}};
-const KM_TABLE   = {"total": {"h1": {"mql": 521, "sql": 113, "arr": 12230000, "sp_excl": 46900, "sp_incl": 105600, "cpsql": 415}, "q1": {"mql": 246, "sql": 30, "arr": 1170000, "sp_excl": 8300, "sp_incl": 36100, "cpsql": 277}, "q2": {"mql": 275, "sql": 83, "arr": 11060000, "sp_excl": 38600, "sp_incl": 69500, "cpsql": 465}, "h2": {"mql": 193, "sql": 30, "arr": 1600000, "sp_excl": 18510, "sp_incl": 82950, "cpsql": 617}, "q3": {"mql": 127, "sql": 23, "arr": 1020000, "sp_excl": 17550, "sp_incl": 49450, "cpsql": 763}, "q4": {"mql": 66, "sql": 7, "arr": 582100, "sp_excl": 959, "sp_incl": 33500, "cpsql": 137}, "fy": {"mql": 714, "sql": 143, "arr": 13830000, "sp_excl": 65410, "sp_incl": 188550, "cpsql": 457}}, "digital": {"h1": {"mql": 377, "sql": 40, "arr": 2750000, "sp_excl": 4638, "cpsql": 116}, "q1": {"mql": 224, "sql": 21, "arr": 798200, "sp_excl": 2285, "cpsql": 109}, "q2": {"mql": 153, "sql": 19, "arr": 1950000, "sp_excl": 2353, "cpsql": 124}, "h2": {"mql": 179, "sql": 21, "arr": 1350000, "sp_excl": 2563, "cpsql": 122}, "q3": {"mql": 113, "sql": 14, "arr": 767100, "sp_excl": 1660, "cpsql": 119}, "q4": {"mql": 66, "sql": 7, "arr": 582100, "sp_excl": 903, "cpsql": 129}, "fy": {"mql": 556, "sql": 61, "arr": 4100000, "sp_excl": 7201, "cpsql": 118}}, "events": {"h1": {"mql": 134, "sql": 76, "arr": 9460000, "sp_excl": 45970, "cpsql": 605, "ev": 7, "loc": "USA \u00b7 EU \u00b7 UK \u00b7 PHP \u00b7 KNY \u00b7 SA \u00b7 Dubai \u00b7 Bahrain"}, "q1": {"mql": 22, "sql": 9, "arr": 372100, "sp_excl": 6069, "cpsql": 674, "ev": 2, "loc": "USA \u00b7 EU"}, "q2": {"mql": 112, "sql": 67, "arr": 9090000, "sp_excl": 39900, "cpsql": 595, "ev": 5, "loc": "UK \u00b7 PHP \u00b7 KNY \u00b7 SA \u00b7 US \u00b7 Dubai \u00b7 Bahrain"}, "h2": {"mql": 14, "sql": 5, "arr": 250000, "sp_excl": 6706, "cpsql": 1341, "ev": 3, "loc": "UK \u00b7 SCXA \u00b7 KSA"}, "q3": {"mql": 14, "sql": 5, "arr": 250000, "sp_excl": 6650, "cpsql": 1330, "ev": 3, "loc": "UK \u00b7 SCXA \u00b7 KSA"}, "q4": {"mql": 0, "sql": 0, "arr": 0, "sp_excl": 56, "cpsql": 0, "ev": 0, "loc": "-"}, "fy": {"mql": 148, "sql": 81, "arr": 9710000, "sp_excl": 52680, "cpsql": 650, "ev": 10, "loc": "10 Events \u00b7 Multi-region"}}};
-
-const PERIOD_KEY_MAP = {
-  'fy':'fy','this_week':'mar','this_month':'mar','this_quarter':'q4',
-  'q1_amj':'q1','q2_jas':'q2','q3_ond':'q3','q4_jfm':'q4',
-  'h1':'h1','h2':'h2',
-  'apr25':'apr','may25':'may','jun25':'jun',
-  'jul25':'jul','aug25':'aug','sep25':'sep',
-  'oct25':'oct','nov25':'nov','dec25':'dec',
-  'jan26':'jan','feb26':'feb','mar26':'mar'
-};
-
-const PERIOD_LABEL_MAP = {
-  'fy':'FY 25-26','this_week':'Mar 2026 (Latest)','this_month':'Mar 2026 (Latest)','this_quarter':'Q4 FY25-26',
-  'q1_amj':'Q1 AMJ','q2_jas':'Q2 JAS','q3_ond':'Q3 OND','q4_jfm':'Q4 JFM',
-  'h1':'H1 FY25-26','h2':'H2 FY25-26',
-  'apr25':'Apr 2025','may25':'May 2025','jun25':'Jun 2025',
-  'jul25':'Jul 2025','aug25':'Aug 2025','sep25':'Sep 2025',
-  'oct25':'Oct 2025','nov25':'Nov 2025','dec25':'Dec 2025',
-  'jan26':'Jan 2026','feb26':'Feb 2026','mar26':'Mar 2026'
-};
-
-const PERIOD_TABLE_COLS = {
-  'fy':['h1','q1','q2','h2','q3','q4','fy'],
-  'h1':['h1','q1','q2'],'h2':['h2','q3','q4'],
-  'q1':['q1'],'q2':['q2'],'q3':['q3'],'q4':['q4'],
-  'apr':['q1'],'may':['q1'],'jun':['q1'],
-  'jul':['q2'],'aug':['q2'],'sep':['q2'],
-  'oct':['q3'],'nov':['q3'],'dec':['q3'],
-  'jan':['q4'],'feb':['q4'],'mar':['q4']
-};
-
-const COL_LABELS = {
-  'h1':'H1','q1':'Q1 AMJ','q2':'Q2 JAS',
-  'h2':'H2','q3':'Q3 OND','q4':'Q4 JFM','fy':'FY 25-26'
-};
-
-function _fARR(v) {
-  if (!v||v===0) return '-';
-  if (v>=1e6) return '$'+(v/1e6).toFixed(2)+'Mn';
-  if (v>=1e3) return '$'+(v/1e3).toFixed(1)+'K';
-  return '$'+v;
-}
-function _fSpend(v) {
-  if (!v||v===0) return '-';
-  if (v>=1e3) return '$'+(v/1e3).toFixed(1)+'K';
-  return '$'+v.toLocaleString();
-}
-function _fNum(v) {
-  if (!v||v===0) return '-';
-  return v.toLocaleString();
-}
-
-function updateKMSummary(periodVal) {
-  var key = PERIOD_KEY_MAP[periodVal] || 'fy';
-  var d = KM_SUMMARY[key] || KM_SUMMARY['fy'];
-  if (!d) return;
-  var el = function(id) { return document.getElementById(id); };
-  if (el('ss_mql')) el('ss_mql').textContent = _fNum(d.mql);
-  if (el('ss_sql')) el('ss_sql').textContent = _fNum(d.sql);
-  if (el('ss_arr')) el('ss_arr').textContent = _fARR(d.arr);
-  if (el('ss_sp_excl')) el('ss_sp_excl').textContent = _fSpend(d.sp_excl);
-  if (el('ss_sp_incl')) el('ss_sp_incl').textContent = _fSpend(d.sp_incl);
-  if (el('ss_deals')) el('ss_deals').textContent = _fNum(d.deals);
-  if (el('ss_period_label')) el('ss_period_label').textContent = PERIOD_LABEL_MAP[periodVal] || 'FY 25-26';
-}
-
-function renderKMTable(periodVal) {
-  var key = PERIOD_KEY_MAP[periodVal] || 'fy';
-  var cols = PERIOD_TABLE_COLS[key] || ['h1','q1','q2','h2','q3','q4','fy'];
-  var container = document.getElementById('km-matrix-container');
-  if (!container) return;
-
-  var BASE = 'padding:7px 12px;text-align:center;border:1px solid #1e2433;font-size:12px;white-space:nowrap';
-  var THB  = 'padding:9px 14px;text-align:center;white-space:nowrap;border:1px solid #1e2433;font-size:11px;font-weight:700';
-
-  function thStyle(c) {
-    if (c==='fy')       return THB+';background:#1e1a3a;color:#a5b4fc';
-    if (c==='h1'||c==='h2') return THB+';background:#3b2800;color:#f59e0b;border-left:2px solid #f59e0b;border-right:2px solid #f59e0b';
-    return THB+';background:#2d1f00;color:#fbbf24';
-  }
-  function tdStyle(c) {
-    if (c==='fy')       return BASE+';background:rgba(99,102,241,0.1);color:#a5b4fc;font-weight:700';
-    if (c==='h1'||c==='h2') return BASE+';background:rgba(245,158,11,0.14);color:#f59e0b;font-weight:700;border-left:2px solid rgba(245,158,11,0.4);border-right:2px solid rgba(245,158,11,0.4)';
-    return BASE+';background:rgba(251,191,36,0.07);color:#fbbf24;font-weight:600';
-  }
-  function evTdStyle(c) {
-    if (c==='fy')       return BASE+';background:rgba(99,102,241,0.08);color:#6b7280;font-size:10px;font-style:italic';
-    if (c==='h1'||c==='h2') return BASE+';background:rgba(245,158,11,0.08);color:#78716c;font-size:10px;font-style:italic;border-left:2px solid rgba(245,158,11,0.3);border-right:2px solid rgba(245,158,11,0.3)';
-    return BASE+';background:rgba(251,191,36,0.05);color:#78716c;font-size:10px;font-style:italic';
-  }
-
-  var THH = THB+';background:#152a1e;color:#d1fae5';
-  var TML = BASE+';background:#1a1d27;color:#8b8fa3;text-align:left;font-size:11px';
-
-  var channels = [
-    {k:'total',  lbl:'Total',          cs:BASE+';background:#0d2118;color:#4ade80;font-weight:700;font-size:12px;letter-spacing:0.5px', ev:false},
-    {k:'digital',lbl:'Digital',        cs:BASE+';background:#0d1a2e;color:#60a5fa;font-weight:700;font-size:12px;letter-spacing:0.5px', ev:false},
-    {k:'events', lbl:'Offline<br>(Events)', cs:BASE+';background:#1f1408;color:#fb923c;font-weight:700;font-size:12px;letter-spacing:0.5px', ev:true},
-  ];
-  var metrics = [
-    {name:'MQL',fn:function(d){return _fNum(d.mql);}},
-    {name:'SQL',fn:function(d){return _fNum(d.sql);}},
-    {name:'Pot. ARR',fn:function(d){return _fARR(d.arr);}},
-    {name:'Spends (w/o salaries)',fn:function(d){return _fSpend(d.sp_excl);}},
-    {name:'Spends (w/ salaries)',fn:function(d){return d.sp_incl?_fSpend(d.sp_incl):'-';}},
-    {name:'CPSQL (w/o salaries)',fn:function(d){return d.cpsql?'$'+d.cpsql.toLocaleString():'-';}},
-  ];
-
-  var hdr = '<tr><th style="'+THH+'">Channel</th><th style="'+THH+'">Metric</th>';
-  cols.forEach(function(c){ hdr += '<th style="'+thStyle(c)+'">'+COL_LABELS[c]+'</th>'; });
-  hdr += '</tr>';
-
-  var body = '';
-  channels.forEach(function(ch, ci) {
-    var data = KM_TABLE[ch.k];
-    if (!data) return;
-    var allM = ch.ev ? metrics.concat([{name:'Events',fn:null}]) : metrics;
-    var nrows = allM.length;
-    allM.forEach(function(m, mi) {
-      var row = '<tr>';
-      if (mi===0) row += '<td style="'+ch.cs+'" rowspan="'+nrows+'">'+ch.lbl+'</td>';
-      row += '<td style="'+TML+'">'+m.name+'</td>';
-      cols.forEach(function(c) {
-        var d = data[c] || {};
-        if (m.name==='Events') {
-          row += '<td style="'+evTdStyle(c)+'">'+(d.ev||0)+' Events<br><span style="font-size:9px">'+(d.loc||'-')+'</span></td>';
-        } else {
-          row += '<td style="'+tdStyle(c)+'">'+m.fn(d)+'</td>';
-        }
-      });
-      row += '</tr>';
-      body += row;
-    });
-    if (ci < channels.length-1) {
-      body += '<tr><td colspan="'+(cols.length+2)+'" style="height:1px;background:#2a2e3b;padding:0;border:none"></td></tr>';
-    }
-  });
-
-  var note = (cols.length===1) ? '<div style="margin-top:8px;font-size:11px;color:#6b7280;font-style:italic">Monthly selections show the relevant quarter breakdown. See summary strip above for monthly estimates.</div>' : '';
-  container.innerHTML = '<table style="width:100%;border-collapse:collapse;min-width:600px"><thead>'+hdr+'</thead><tbody>'+body+'</tbody></table>'+note;
-}
-
-function updateKMDashboard(periodVal) {
-  updateKMSummary(periodVal);
-  renderKMTable(periodVal);
-}
-
-// ============== PERIOD CHANGE & CUSTOM RANGE ==============
-function onPeriodChange(sel) {
-  var customDiv = document.getElementById('customDateRange');
-  if (sel.value === 'custom') { customDiv.style.display = 'flex'; }
-  else {
-    customDiv.style.display = 'none';
-    updateKMDashboard(sel.value);
-  }
-}
-
-function applyCustomRange() {
-  const from = document.getElementById('customFrom').value;
-  const to = document.getElementById('customTo').value;
-  if (!from || !to) { alert('Please select both start and end dates'); return; }
-  if (from > to) { alert('Start date must be before end date'); return; }
-  document.getElementById('customDateRange').style.display = 'none';
-  const sel = document.getElementById('periodSelect');
-  sel.options[sel.selectedIndex].text = 'Custom: ' + from + ' to ' + to;
-}
-
-// ============== COLLAPSIBLE SECTIONS & WIDGETS ==============
-(function() {
-  const titles = document.querySelectorAll('.section-title');
-  titles.forEach(function(title) {
-    const details = document.createElement('details');
-    details.className = 'collapsible-section';
-    details.open = true;
-    const summary = document.createElement('summary');
-    summary.innerHTML = title.innerHTML;
-    details.appendChild(summary);
-    const body = document.createElement('div');
-    body.className = 'section-body';
-    title.parentNode.insertBefore(details, title);
-    title.remove();
-    let next = details.nextElementSibling;
-    while (next && !next.classList.contains('section-title') && next.tagName !== 'DETAILS' && !next.classList.contains('collapsible-section') && !next.matches('[style*="text-align:center"]')) {
-      const current = next;
-      next = next.nextElementSibling;
-      body.appendChild(current);
-    }
-    details.appendChild(body);
-  });
-  document.querySelectorAll('.chart-card, .table-card').forEach(function(card) {
-    const h3 = card.querySelector('h3');
-    if (!h3) return;
-    const details = document.createElement('details');
-    details.className = 'collapsible-widget';
-    details.open = true;
-    details.style.cssText = card.style.cssText;
-    card.classList.forEach(function(c) { if (c !== 'chart-card' && c !== 'table-card') details.classList.add(c); });
-    if (card.classList.contains('chart-card')) details.classList.add('chart-card');
-    if (card.classList.contains('table-card')) details.classList.add('table-card');
-    const summary = document.createElement('summary');
-    summary.textContent = h3.textContent;
-    details.appendChild(summary);
-    const body = document.createElement('div');
-    body.className = 'widget-body';
-    h3.remove();
-    while (card.firstChild) { body.appendChild(card.firstChild); }
-    details.appendChild(body);
-    card.parentNode.replaceChild(details, card);
-  });
-})();
-
-function toggleAllSections(expand) {
-  document.querySelectorAll('details.collapsible-section, details.collapsible-widget').forEach(function(d) { d.open = expand; });
-}
-
-// ============== CURRENCY TOGGLE ==============
-let currencyMode = 'usd';
-let exchangeRate = 90;
-let originalValues = new Map();
-
-(async function fetchRate() {
-  try {
-    const res = await fetch('https://open.er-api.com/v6/latest/USD');
-    const data = await res.json();
-    if (data && data.rates && data.rates.INR) {
-      exchangeRate = Math.round(data.rates.INR * 100) / 100;
-      document.getElementById('currRate').textContent = '(1$ = \u20B9' + exchangeRate + ' live)';
-    }
-  } catch(e) {
-    document.getElementById('currRate').textContent = '(1$ = \u20B990 fallback)';
-  }
-})();
-
-function toggleCurrency() {
-  const track = document.getElementById('currToggle');
-  if (currencyMode === 'usd') {
-    currencyMode = 'inr';
-    track.classList.add('active');
-    convertAllToINR();
-  } else {
-    currencyMode = 'usd';
-    track.classList.remove('active');
-    restoreAllToUSD();
-  }
-}
-
-function convertAllToINR() {
-  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
-  const dollarRegex = /\$([0-9,.]+)(K|M|B)?/g;
-  const nodesToUpdate = [];
-  while (walker.nextNode()) {
-    const node = walker.currentNode;
-    if (node.parentElement && (node.parentElement.tagName === 'SCRIPT' || node.parentElement.tagName === 'STYLE')) continue;
-    if (dollarRegex.test(node.textContent)) { nodesToUpdate.push(node); }
-    dollarRegex.lastIndex = 0;
-  }
-  nodesToUpdate.forEach(function(node) {
-    if (!originalValues.has(node)) { originalValues.set(node, node.textContent); }
-    node.textContent = node.textContent.replace(dollarRegex, function(match, num, suffix) {
-      const cleanNum = parseFloat(num.replace(/,/g, ''));
-      if (isNaN(cleanNum)) return match;
-      let inrVal = cleanNum * exchangeRate;
-      let inrSuffix = suffix || '';
-      if (inrVal >= 100) { inrVal = Math.round(inrVal); } else { inrVal = Math.round(inrVal * 10) / 10; }
-      if (inrSuffix === 'M') { return '\u20B9' + (inrVal / 10).toFixed(1) + ' Cr'; }
-      else if (inrSuffix === 'K') { if (inrVal >= 100) { return '\u20B9' + (inrVal / 100).toFixed(1) + 'L'; } return '\u20B9' + inrVal.toLocaleString('en-IN') + 'K'; }
-      else { return '\u20B9' + inrVal.toLocaleString('en-IN'); }
-    });
-  });
-}
-
-function restoreAllToUSD() {
-  originalValues.forEach(function(original, node) { if (node.parentNode) { node.textContent = original; } });
-  originalValues.clear();
-}
-
-// ============== INIT: populate summary strip & table on load ==============
-(function() {
-  var sel = document.getElementById('periodSelect');
-  var initPeriod = sel ? sel.value : 'this_month';
-  updateKMDashboard(initPeriod);
-})();
+hbar(leadStatusChart, D.leads_status, '#38bdf8');
+hbar(leadSourceChart, D.leads_source, '#4ade80');
+hbar(leadOwnerChart, D.leads_owner, '#a78bfa');
+hbar(dealStageChart, D.deals_stage, '#fbbf24');
+hbar(stageValueChart, D.stage_values, '#fb923c', true);
 </script>
 </body>
 </html>
