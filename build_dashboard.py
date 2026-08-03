@@ -1,490 +1,511 @@
-#!/usr/bin/env python3
-"""
-Knowmax Marketing Dashboard — HTML Builder
-Reads dashboard_data.json and generates a self-contained Marketing_Dashboard.html
-"""
+import json, datetime
 
-import json
-from datetime import datetime
+ga = json.load(open("ga4_data.json"))
+ads = json.load(open("ads_data.json"))
+crm = json.load(open("crm_data.json"))
+seo = json.load(open("seo_data.json"))
 
-with open("dashboard_data.json") as f:
-    D = json.load(f)
+TODAY = datetime.date(2026, 8, 3)
+gen = TODAY.strftime("%d %b %Y")
 
-INR_RATE = 84.5
-generated = D.get("generated_at", datetime.now().isoformat())
+cur = ga["current_month"][0]
+lastfull = ga["last_month"][0]
+lastsp = ga["last_month_same_period"][0]
 
-# ─── Helpers ───
-def fmt(n, prefix="", suffix=""):
-    if n is None: return "—"
-    try:
-        n = float(n)
-    except:
-        return str(n)
-    if abs(n) >= 1_000_000:
-        return f"{prefix}{n/1_000_000:.1f}M{suffix}"
-    if abs(n) >= 1_000:
-        return f"{prefix}{n/1_000:.1f}K{suffix}"
-    if n == int(n):
-        return f"{prefix}{int(n)}{suffix}"
-    return f"{prefix}{n:.2f}{suffix}"
+def pct(a, b):
+    if not b:
+        return None
+    return (a - b) / b * 100.0
 
-def pct_change(curr, prev):
-    try:
-        c, p = float(curr), float(prev)
-        if p == 0: return ("new", "green")
-        ch = ((c - p) / p) * 100
-        color = "green" if ch >= 0 else "red"
-        arrow = "▲" if ch >= 0 else "▼"
-        return (f"{arrow} {abs(ch):.1f}%", color)
-    except:
-        return ("—", "gray")
+# Open pipeline = all stages not starting with "Closed"
+open_stages = [s for s in crm["deals_by_stage"] if not s["stage"].lower().startswith("closed")]
+open_pipeline = sum(s["value"] for s in open_stages)
+open_count = sum(s["count"] for s in open_stages)
 
-# ─── Extract data ───
-ga4 = D.get("ga4", {})
-gads = D.get("google_ads", {})
-zoho = D.get("zoho_crm", {})
-snov = D.get("snov", {})
-gsc = D.get("gsc", {})
-ahrefs = D.get("ahrefs", {})
+snov_bal = 0
+try:
+    snov_bal = float(crm["snov"]["data"]["balance"])
+except Exception:
+    pass
 
-traffic_cm = ga4.get("traffic", {}).get("current_month", {})
-traffic_lm = ga4.get("traffic", {}).get("last_month", {})
+ads_last = ads["last_month"]
+ads_ytd = sum(m["cost_usd"] for m in ads["monthly"])
+ads_clicks_ytd = sum(m["clicks"] for m in ads["monthly"])
 
-# Build KPI cards data
-kpi_cards = []
+gsc_last = seo["gsc_monthly"][-1]
 
-# GA4 KPIs
-for key, label in [("sessions", "Sessions"), ("users", "Users"), ("pageviews", "Pageviews")]:
-    val = traffic_cm.get(key, 0)
-    prev = traffic_lm.get(key, 0)
-    change, color = pct_change(val, prev)
-    kpi_cards.append({"label": label, "value": fmt(val), "change": change, "color": color, "prev": fmt(prev), "section": "GA4"})
+KPIS = [
+    {"label": "Sessions", "value": f'{int(cur["sessions"]):,}', "sub": "Aug 2026 MTD",
+     "delta": pct(cur["sessions"], lastsp["sessions"]), "note": "vs Jul 1–3", "group": "traffic"},
+    {"label": "Users", "value": f'{int(cur["totalUsers"]):,}', "sub": "Aug 2026 MTD",
+     "delta": pct(cur["totalUsers"], lastsp["totalUsers"]), "note": "vs Jul 1–3", "group": "traffic"},
+    {"label": "Pageviews", "value": f'{int(cur["screenPageViews"]):,}', "sub": "Aug 2026 MTD",
+     "delta": pct(cur["screenPageViews"], lastsp["screenPageViews"]), "note": "vs Jul 1–3", "group": "traffic"},
+    {"label": "Bounce Rate", "value": f'{cur["bounceRate"]*100:.1f}%', "sub": "Aug 2026 MTD",
+     "delta": pct(cur["bounceRate"], lastsp["bounceRate"]), "note": "vs Jul 1–3",
+     "group": "traffic", "invert": True},
+    {"label": "Domain Rating", "value": f'{seo["domain_rating"]:.0f}', "sub": f'Ahrefs rank {seo["ahrefs_rank"]:,}',
+     "group": "seo"},
+    {"label": "Organic Keywords", "value": f'{seo["org_keywords"]:,}',
+     "sub": f'{seo["org_keywords_1_3"]:,} in top 3', "group": "seo"},
+    {"label": "Organic Traffic", "value": f'{seo["org_traffic"]:,}',
+     "sub": f'≈ ${seo["org_traffic_value_usd"]:,.0f}/mo value', "group": "seo"},
+    {"label": "Ad Spend", "value": f'${ads_last["cost_usd"]:,.0f}', "sub": "Jul 2026 · $%s trailing 12m" % f"{ads_ytd:,.0f}",
+     "group": "ads"},
+    {"label": "Ad Clicks", "value": f'{ads_last["clicks"]:,}', "sub": f'{ads_clicks_ytd:,} trailing 12m',
+     "group": "ads"},
+    {"label": "Total Leads", "value": f'{crm["leads_total"]:,}', "sub": "9 tracked owners", "group": "crm"},
+    {"label": "Open Pipeline", "value": f'{open_pipeline/1e6:,.2f}M', "sub": f'{open_count} open deals',
+     "group": "crm"},
+    {"label": "Won Deals", "value": f'{crm["won_count"]}', "sub": f'{crm["won_value"]/1e3:,.0f}K won value',
+     "group": "crm"},
+    {"label": "Snov Credits", "value": f'{snov_bal:,.0f}', "sub": "balance remaining", "group": "ops"},
+]
 
-# Bounce rate (lower is better)
-br_cm = traffic_cm.get("bounce_rate", 0)
-br_lm = traffic_lm.get("bounce_rate", 0)
-br_change_val = (float(br_cm) - float(br_lm)) * 100 if br_lm else 0
-br_color = "green" if br_change_val <= 0 else "red"
-br_arrow = "▼" if br_change_val <= 0 else "▲"
-kpi_cards.append({"label": "Bounce Rate", "value": f"{float(br_cm)*100:.1f}%", "change": f"{br_arrow} {abs(br_change_val):.1f}pp", "color": br_color, "prev": f"{float(br_lm)*100:.1f}%", "section": "GA4"})
+DATA = {
+    "generated": gen,
+    "ga": ga, "ads": ads, "crm": crm, "seo": seo,
+    "open_pipeline": open_pipeline, "open_count": open_count,
+    "gsc_last": gsc_last,
+}
 
-# Ahrefs KPIs
-kpi_cards.append({"label": "Domain Rating", "value": str(ahrefs.get("domain_rating", "—")), "change": "", "color": "blue", "prev": "", "section": "Ahrefs"})
-kpi_cards.append({"label": "Organic Keywords", "value": fmt(ahrefs.get("org_keywords", 0)), "change": f"Top 3: {ahrefs.get('org_keywords_top3', 0)}", "color": "blue", "prev": "", "section": "Ahrefs"})
-kpi_cards.append({"label": "Organic Traffic", "value": fmt(ahrefs.get("org_traffic", 0)), "change": f"Value: ${fmt(ahrefs.get('org_cost', 0))}", "color": "blue", "prev": "", "section": "Ahrefs"})
+def kpi_html(k):
+    d = k.get("delta")
+    if d is None:
+        badge = ""
+    else:
+        good = d < 0 if k.get("invert") else d > 0
+        cls = "up" if good else ("flat" if abs(d) < 0.05 else "down")
+        arrow = "▲" if d > 0 else ("▼" if d < 0 else "■")
+        badge = f'<span class="delta {cls}">{arrow} {abs(d):.1f}%<em>{k["note"]}</em></span>'
+    return f'''<div class="kpi g-{k["group"]}">
+      <div class="kpi-label">{k["label"]}</div>
+      <div class="kpi-value">{k["value"]}</div>
+      <div class="kpi-foot"><span class="kpi-sub">{k.get("sub","")}</span>{badge}</div>
+    </div>'''
 
-# Google Ads
-gads_cm = gads.get("current_month", {})
-gads_lm = gads.get("last_month", {})
-kpi_cards.append({"label": "Ad Spend (USD)", "value": f"${fmt(gads_cm.get('spend_usd', 0))}", "change": "", "color": "purple", "prev": f"Last: ${fmt(gads_lm.get('spend_usd', 0))}", "section": "Google Ads"})
-kpi_cards.append({"label": "Ad Clicks", "value": fmt(gads_cm.get("clicks", 0)), "change": "", "color": "purple", "prev": f"Last: {fmt(gads_lm.get('clicks', 0))}", "section": "Google Ads"})
-
-# Zoho
-leads = zoho.get("leads", {})
-deals = zoho.get("deals", {})
-kpi_cards.append({"label": "Total Leads", "value": fmt(leads.get("total", 0)), "change": f"This month: {leads.get('this_month', 0)}", "color": "orange", "prev": "", "section": "Zoho CRM"})
-kpi_cards.append({"label": "Pipeline Value", "value": f"${fmt(deals.get('pipeline_value', 0))}", "change": f"Deals: {deals.get('total', 0)}", "color": "orange", "prev": "", "section": "Zoho CRM"})
-kpi_cards.append({"label": "Won Deals", "value": fmt(deals.get("won_count", 0)), "change": f"Value: ${fmt(deals.get('won_value', 0))}", "color": "orange", "prev": "", "section": "Zoho CRM"})
-
-# Snov
-snov_bal = snov.get("balance", {}).get("data", {})
-kpi_cards.append({"label": "Snov Credits", "value": fmt(float(snov_bal.get("balance", 0))), "change": f"Resets in {snov_bal.get('limit_resets_in', '?')} days", "color": "teal", "prev": "", "section": "Snov.io"})
-
-# ─── JSON for charts ───
-ga4_monthly = json.dumps(ga4.get("monthly_trend", []))
-ga4_channels = json.dumps(ga4.get("channels", []))
-ga4_devices = json.dumps(ga4.get("devices", []))
-ga4_countries = json.dumps(ga4.get("countries", [])[:20])
-ga4_pages = json.dumps(ga4.get("top_pages", [])[:15])
-gsc_history = json.dumps(gsc.get("performance_history", []))
-gsc_keywords = json.dumps(gsc.get("top_keywords", []))
-gsc_pages = json.dumps(gsc.get("top_pages", []))
-gads_campaigns = json.dumps(gads.get("campaigns", []))
-gads_monthly = json.dumps(gads.get("monthly_trend", []))
-zoho_leads_status = json.dumps(leads.get("by_status", {}))
-zoho_leads_source = json.dumps(leads.get("by_source", {}))
-zoho_leads_owner = json.dumps(leads.get("by_owner", {}))
-zoho_deals_stage = json.dumps(deals.get("by_stage", {}))
-zoho_deals_owner = json.dumps(deals.get("by_owner", {}))
+kpis = "\n".join(kpi_html(k) for k in KPIS)
 
 
-# ─── Build KPI HTML ───
-def kpi_html(cards):
-    html = ""
-    for c in cards:
-        badge_colors = {"GA4": "#4285f4", "Ahrefs": "#ff6b35", "Google Ads": "#7b2ff7", "Zoho CRM": "#e8590c", "Snov.io": "#0d9488"}
-        badge_color = badge_colors.get(c["section"], "#666")
-        change_html = f'<div class="kpi-change" style="color:{c["color"]}">{c["change"]}</div>' if c["change"] else ""
-        prev_html = f'<div class="kpi-prev">{c["prev"]}</div>' if c["prev"] else ""
-        html += f'''
-        <div class="kpi-card">
-            <div class="kpi-badge" style="background:{badge_color}">{c["section"]}</div>
-            <div class="kpi-label">{c["label"]}</div>
-            <div class="kpi-value">{c["value"]}</div>
-            {change_html}
-            {prev_html}
-        </div>'''
-    return html
+def table(headers, rows, aligns=None):
+    aligns = aligns or ["left"] * len(headers)
+    th = "".join(f'<th style="text-align:{a}">{h}</th>' for h, a in zip(headers, aligns))
+    trs = []
+    for r in rows:
+        tds = "".join(f'<td style="text-align:{a}">{c}</td>' for c, a in zip(r, aligns))
+        trs.append(f"<tr>{tds}</tr>")
+    return f'<table><thead><tr>{th}</tr></thead><tbody>{"".join(trs)}</tbody></table>'
 
 
-# ─── Full HTML ───
-html = f'''<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+# ---- Tables ----
+countries_tbl = table(
+    ["#", "Country", "Sessions", "Users", "% of total"],
+    [[i + 1, c["country"], f'{int(c["sessions"]):,}', f'{int(c["totalUsers"]):,}',
+      f'{c["sessions"]/sum(x["sessions"] for x in ga["countries_fy"])*100:.1f}%']
+     for i, c in enumerate(ga["countries_fy"])],
+    ["right", "left", "right", "right", "right"])
+
+pages_tbl = table(
+    ["#", "Page", "Pageviews", "Sessions"],
+    [[i + 1, f'<a href="https://knowmax.ai{p["pagePath"]}" target="_blank">{p["pagePath"]}</a>',
+      f'{int(p["screenPageViews"]):,}', f'{int(p["sessions"]):,}']
+     for i, p in enumerate(ga["top_pages"])],
+    ["right", "left", "right", "right"])
+
+kw_tbl = table(
+    ["#", "Keyword", "Volume", "Best pos.", "Traffic", "URL"],
+    [[i + 1, k["keyword"], f'{k["volume"]:,}',
+      f'<span class="pos p{min(k["best_position"],11)}">{k["best_position"]}</span>',
+      f'{k["sum_traffic"]:,}',
+      f'<a href="{k["url"]}" target="_blank">{k["url"].replace("https://knowmax.ai","")}</a>']
+     for i, k in enumerate(seo["top_keywords"])],
+    ["right", "left", "right", "center", "right", "left"])
+
+sp_tbl = table(
+    ["#", "Page", "Traffic", "Keywords", "Top keyword", "Pos."],
+    [[i + 1, f'<a href="{p["url"]}" target="_blank">{p["url"].replace("https://knowmax.ai","") or "/"}</a>',
+      f'{p["sum_traffic"]:,}', f'{p["keywords"]:,}', p["top_keyword"],
+      f'<span class="pos p{min(p["top_keyword_best_position"],11)}">{p["top_keyword_best_position"]}</span>']
+     for i, p in enumerate(seo["top_pages"])],
+    ["right", "left", "right", "right", "left", "center"])
+
+camp_rows = []
+for c in ads["campaigns"]:
+    cpc = c["cost_usd"] / c["clicks"] if c["clicks"] else 0
+    ctr = c["clicks"] / c["impressions"] * 100 if c["impressions"] else 0
+    camp_rows.append([c["campaign"], f'<span class="tag {c["status"].lower()}">{c["status"].title()}</span>',
+                      f'${c["cost_usd"]:,.2f}', f'{c["impressions"]:,}', f'{c["clicks"]:,}',
+                      f'{ctr:.2f}%', f'${cpc:,.2f}', f'{c["conversions"]:.0f}'])
+camp_tbl = table(["Campaign", "Status", "Cost (USD)", "Impressions", "Clicks", "CTR", "CPC", "Conv."],
+                 camp_rows, ["left", "left", "right", "right", "right", "right", "right", "right"])
+
+stage_rows = [[s["stage"], f'{s["count"]}', f'{s["value"]:,.0f}'] for s in crm["deals_by_stage"]]
+stage_tbl = table(["Stage", "Deals", "Value"], stage_rows, ["left", "right", "right"])
+
+HTML = f'''<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Knowmax Marketing Dashboard</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-:root {{
-    --bg: #0f172a; --card: #1e293b; --card-hover: #334155; --text: #e2e8f0;
-    --text-dim: #94a3b8; --accent: #38bdf8; --green: #22c55e; --red: #ef4444;
-    --orange: #f59e0b; --purple: #a78bfa; --teal: #2dd4bf; --blue: #60a5fa;
-    --border: #334155;
+:root{{
+  --bg:#0f172a; --panel:#16213b; --panel2:#1c2745; --line:#27354f;
+  --txt:#e2e8f0; --mut:#94a3b8; --dim:#64748b;
+  --teal:#2dd4bf; --blue:#60a5fa; --amber:#fbbf24; --violet:#a78bfa;
+  --green:#34d399; --red:#f87171; --pink:#f472b6;
 }}
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }}
-.header {{ background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-bottom: 1px solid var(--border); padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; }}
-.header h1 {{ font-size: 1.5rem; font-weight: 700; }}
-.header h1 span {{ color: var(--accent); }}
-.header .meta {{ color: var(--text-dim); font-size: 0.8rem; }}
-.container {{ max-width: 1600px; margin: 0 auto; padding: 24px; }}
-.section-title {{ font-size: 1.1rem; font-weight: 600; margin: 28px 0 14px; color: var(--text); display: flex; align-items: center; gap: 8px; }}
-.section-title .icon {{ font-size: 1.2rem; }}
+*{{box-sizing:border-box}}
+body{{margin:0;background:var(--bg);color:var(--txt);
+  font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  font-size:14px;line-height:1.5}}
+a{{color:var(--blue);text-decoration:none}} a:hover{{text-decoration:underline}}
+.wrap{{max-width:1400px;margin:0 auto;padding:28px 22px 60px}}
+header{{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;
+  gap:14px;margin-bottom:26px;padding-bottom:20px;border-bottom:1px solid var(--line)}}
+h1{{margin:0;font-size:26px;font-weight:800;letter-spacing:-.5px}}
+h1 span{{background:linear-gradient(90deg,var(--teal),var(--blue));-webkit-background-clip:text;
+  background-clip:text;color:transparent}}
+.sub{{color:var(--mut);font-size:13px;margin-top:6px}}
+.stamp{{background:var(--panel);border:1px solid var(--line);border-radius:9px;
+  padding:8px 14px;font-size:12px;color:var(--mut)}}
+.stamp b{{color:var(--teal)}}
 
-/* KPI Grid */
-.kpi-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px; }}
-.kpi-card {{ background: var(--card); border-radius: 12px; padding: 16px; border: 1px solid var(--border); transition: all 0.2s; position: relative; }}
-.kpi-card:hover {{ background: var(--card-hover); transform: translateY(-2px); }}
-.kpi-badge {{ position: absolute; top: 10px; right: 10px; font-size: 0.6rem; padding: 2px 7px; border-radius: 10px; color: white; font-weight: 600; }}
-.kpi-label {{ font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }}
-.kpi-value {{ font-size: 1.6rem; font-weight: 700; }}
-.kpi-change {{ font-size: 0.8rem; margin-top: 4px; font-weight: 500; }}
-.kpi-prev {{ font-size: 0.7rem; color: var(--text-dim); margin-top: 2px; }}
+.kpis{{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:28px}}
+.kpi{{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 15px;
+  position:relative;overflow:hidden}}
+.kpi::before{{content:"";position:absolute;left:0;top:0;bottom:0;width:3px}}
+.kpi.g-traffic::before{{background:var(--teal)}}
+.kpi.g-seo::before{{background:var(--violet)}}
+.kpi.g-ads::before{{background:var(--amber)}}
+.kpi.g-crm::before{{background:var(--blue)}}
+.kpi.g-ops::before{{background:var(--pink)}}
+.kpi-label{{font-size:11px;text-transform:uppercase;letter-spacing:.9px;color:var(--mut);font-weight:600}}
+.kpi-value{{font-size:26px;font-weight:800;margin:6px 0 2px;letter-spacing:-.7px}}
+.kpi-foot{{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}}
+.kpi-sub{{font-size:11px;color:var(--dim)}}
+.delta{{font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;display:inline-flex;
+  align-items:center;gap:5px}}
+.delta em{{font-style:normal;font-weight:500;opacity:.75;font-size:10px}}
+.delta.up{{background:rgba(52,211,153,.13);color:var(--green)}}
+.delta.down{{background:rgba(248,113,113,.13);color:var(--red)}}
+.delta.flat{{background:rgba(148,163,184,.13);color:var(--mut)}}
 
-/* Charts Grid */
-.charts-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-bottom: 24px; }}
-.chart-card {{ background: var(--card); border-radius: 12px; padding: 20px; border: 1px solid var(--border); }}
-.chart-card.wide {{ grid-column: span 2; }}
-.chart-card h3 {{ font-size: 0.9rem; color: var(--text-dim); margin-bottom: 14px; font-weight: 500; }}
+.tabs{{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--line);
+  padding-bottom:0}}
+.tab{{background:none;border:none;border-bottom:2px solid transparent;color:var(--mut);
+  padding:10px 16px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;
+  border-radius:8px 8px 0 0}}
+.tab:hover{{color:var(--txt);background:var(--panel)}}
+.tab.on{{color:var(--teal);border-bottom-color:var(--teal)}}
+.panel{{display:none}} .panel.on{{display:block}}
 
-/* Tables */
-.data-table {{ width: 100%; border-collapse: collapse; font-size: 0.8rem; }}
-.data-table th {{ text-align: left; padding: 8px 10px; color: var(--text-dim); font-weight: 500; border-bottom: 1px solid var(--border); font-size: 0.7rem; text-transform: uppercase; }}
-.data-table td {{ padding: 8px 10px; border-bottom: 1px solid rgba(51,65,85,0.5); }}
-.data-table tr:hover {{ background: rgba(56,189,248,0.05); }}
-.data-table .url {{ max-width: 350px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--accent); }}
-.data-table .num {{ text-align: right; font-variant-numeric: tabular-nums; }}
+.grid{{display:grid;gap:14px;margin-bottom:14px}}
+.g2{{grid-template-columns:1fr 1fr}}
+.g3{{grid-template-columns:1fr 1fr}}
+@media(max-width:900px){{.g2,.g3{{grid-template-columns:1fr}}}}
+.card{{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}}
+.card h3{{margin:0 0 4px;font-size:14px;font-weight:700}}
+.card .hint{{font-size:11.5px;color:var(--dim);margin-bottom:12px}}
+.chart{{position:relative;height:290px}}
+.chart.sm{{height:250px}}
+.chart.tall{{height:360px}}
 
-/* Tabs */
-.tabs {{ display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }}
-.tab {{ padding: 6px 14px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 0.8rem; color: var(--text-dim); transition: all 0.2s; }}
-.tab.active {{ background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; }}
-.tab:hover:not(.active) {{ background: var(--card-hover); }}
-.tab-content {{ display: none; }}
-.tab-content.active {{ display: block; }}
+table{{width:100%;border-collapse:collapse;font-size:12.5px}}
+thead th{{color:var(--mut);font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;
+  font-weight:700;padding:8px 9px;border-bottom:1px solid var(--line);white-space:nowrap}}
+tbody td{{padding:8px 9px;border-bottom:1px solid rgba(39,53,79,.55)}}
+tbody tr:hover{{background:var(--panel2)}}
+tbody tr:last-child td{{border-bottom:none}}
+.scroll{{max-height:520px;overflow:auto}}
+.scroll::-webkit-scrollbar{{width:8px;height:8px}}
+.scroll::-webkit-scrollbar-thumb{{background:var(--line);border-radius:8px}}
+td a{{display:inline-block;max-width:420px;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;vertical-align:bottom}}
+.pos{{display:inline-block;min-width:26px;padding:2px 6px;border-radius:6px;font-weight:700;
+  font-size:11px;background:rgba(148,163,184,.15);color:var(--mut)}}
+.pos.p1,.pos.p2,.pos.p3{{background:rgba(52,211,153,.15);color:var(--green)}}
+.pos.p4,.pos.p5,.pos.p6,.pos.p7,.pos.p8,.pos.p9,.pos.p10{{background:rgba(251,191,36,.15);color:var(--amber)}}
+.tag{{font-size:10.5px;padding:2px 8px;border-radius:20px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.5px;background:rgba(148,163,184,.15);color:var(--mut)}}
+.tag.enabled{{background:rgba(52,211,153,.15);color:var(--green)}}
+.tag.paused{{background:rgba(251,191,36,.15);color:var(--amber)}}
+.note{{background:var(--panel2);border-left:3px solid var(--amber);border-radius:8px;
+  padding:11px 14px;font-size:12.5px;color:var(--mut);margin-bottom:14px}}
+footer{{margin-top:34px;padding-top:18px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--dim);display:flex;justify-content:space-between;
+  flex-wrap:wrap;gap:10px}}
+</style></head><body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>Knowmax <span>Marketing Dashboard</span></h1>
+    <div class="sub">GA4 · Ahrefs &amp; Search Console · Google Ads · Zoho CRM · Snov.io</div>
+  </div>
+  <div class="stamp">Last refreshed <b>{gen}</b></div>
+</header>
 
-@media (max-width: 900px) {{
-    .charts-grid {{ grid-template-columns: 1fr; }}
-    .chart-card.wide {{ grid-column: span 1; }}
-    .kpi-grid {{ grid-template-columns: repeat(2, 1fr); }}
-}}
-</style>
-</head>
-<body>
+<div class="kpis">{kpis}</div>
 
-<div class="header">
-    <h1>📊 <span>Knowmax</span> Marketing Dashboard</h1>
-    <div class="meta">Generated: {generated[:16].replace("T", " ")} | Data: GA4 · GSC · Ahrefs · Google Ads · Zoho CRM · Snov.io</div>
+<div class="tabs">
+  <button class="tab on" data-p="traffic">Website Traffic</button>
+  <button class="tab" data-p="seo">SEO &amp; Search</button>
+  <button class="tab" data-p="ads">Google Ads</button>
+  <button class="tab" data-p="crm">CRM Pipeline</button>
 </div>
 
-<div class="container">
-    <!-- KPI Cards -->
-    <div class="section-title"><span class="icon">📈</span> Key Metrics Overview</div>
-    <div class="kpi-grid">
-        {kpi_html(kpi_cards)}
-    </div>
+<!-- TRAFFIC -->
+<section class="panel on" id="p-traffic">
+  <div class="card" style="margin-bottom:14px">
+    <h3>Monthly traffic trend</h3>
+    <div class="hint">Sessions, users and pageviews · Aug 2025 – Aug 2026 (Aug 2026 is month-to-date)</div>
+    <div class="chart tall"><canvas id="c-monthly"></canvas></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Sessions by channel</h3>
+      <div class="hint">Trailing 12 months</div>
+      <div class="chart"><canvas id="c-channels"></canvas></div></div>
+    <div class="card"><h3>Sessions by device</h3>
+      <div class="hint">Trailing 12 months</div>
+      <div class="chart"><canvas id="c-devices"></canvas></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Top 20 countries</h3>
+      <div class="hint">FY 2025–26 scope · Apr 2025 – Mar 2026</div>
+      <div class="scroll">{countries_tbl}</div></div>
+    <div class="card"><h3>Top 20 pages</h3>
+      <div class="hint">Trailing 12 months by pageviews</div>
+      <div class="scroll">{pages_tbl}</div></div>
+  </div>
+</section>
 
-    <!-- Navigation Tabs -->
-    <div class="tabs">
-        <div class="tab active" onclick="showSection('traffic')">Website Traffic</div>
-        <div class="tab" onclick="showSection('seo')">SEO & Search</div>
-        <div class="tab" onclick="showSection('ads')">Google Ads</div>
-        <div class="tab" onclick="showSection('crm')">CRM Pipeline</div>
-    </div>
+<!-- SEO -->
+<section class="panel" id="p-seo">
+  <div class="card" style="margin-bottom:14px">
+    <h3>Search Console performance</h3>
+    <div class="hint">Monthly clicks (bars) and impressions (line) · knowmax.ai</div>
+    <div class="chart tall"><canvas id="c-gsc"></canvas></div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <h3>Average position &amp; CTR</h3>
+    <div class="hint">Lower position is better</div>
+    <div class="chart sm"><canvas id="c-gscpos"></canvas></div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <h3>Top 20 organic keywords</h3>
+    <div class="hint">Ahrefs · ranked by estimated monthly traffic</div>
+    <div class="scroll">{kw_tbl}</div>
+  </div>
+  <div class="card">
+    <h3>Top 20 organic pages</h3>
+    <div class="hint">Ahrefs · ranked by estimated monthly traffic</div>
+    <div class="scroll">{sp_tbl}</div>
+  </div>
+</section>
 
-    <!-- TRAFFIC SECTION -->
-    <div class="tab-content active" id="sec-traffic">
-        <div class="charts-grid">
-            <div class="chart-card wide">
-                <h3>Monthly Sessions & Users (Last 12 Months)</h3>
-                <canvas id="chart-monthly" height="80"></canvas>
-            </div>
-            <div class="chart-card">
-                <h3>Traffic Channels (Current Month)</h3>
-                <canvas id="chart-channels" height="160"></canvas>
-            </div>
-            <div class="chart-card">
-                <h3>Device Breakdown</h3>
-                <canvas id="chart-devices" height="160"></canvas>
-            </div>
-            <div class="chart-card">
-                <h3>Top Countries (FY 25-26)</h3>
-                <div style="max-height:320px;overflow-y:auto;">
-                    <table class="data-table" id="tbl-countries"></table>
-                </div>
-            </div>
-            <div class="chart-card">
-                <h3>Top Pages (Current Month)</h3>
-                <div style="max-height:320px;overflow-y:auto;">
-                    <table class="data-table" id="tbl-ga-pages"></table>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- ADS -->
+<section class="panel" id="p-ads">
+  <div class="note"><b>Heads up:</b> the Google Ads account has recorded no spend, clicks or
+  impressions since December 2025. All paid campaigns are currently paused, so current-month and
+  last-month figures are zero. Figures below cover the trailing 12 months.</div>
+  <div class="card" style="margin-bottom:14px">
+    <h3>Monthly ad spend &amp; clicks</h3>
+    <div class="hint">Cost converted from INR at ₹84.5 = $1</div>
+    <div class="chart"><canvas id="c-ads"></canvas></div>
+  </div>
+  <div class="card">
+    <h3>Campaign breakdown</h3>
+    <div class="hint">Campaigns with delivery in the trailing 12 months</div>
+    {camp_tbl}
+  </div>
+</section>
 
-    <!-- SEO SECTION -->
-    <div class="tab-content" id="sec-seo">
-        <div class="charts-grid">
-            <div class="chart-card wide">
-                <h3>GSC Clicks & Impressions (Monthly, via Ahrefs)</h3>
-                <canvas id="chart-gsc" height="80"></canvas>
-            </div>
-            <div class="chart-card">
-                <h3>Top Organic Keywords (Ahrefs)</h3>
-                <div style="max-height:400px;overflow-y:auto;">
-                    <table class="data-table" id="tbl-keywords"></table>
-                </div>
-            </div>
-            <div class="chart-card">
-                <h3>Top Pages by Traffic (Ahrefs)</h3>
-                <div style="max-height:400px;overflow-y:auto;">
-                    <table class="data-table" id="tbl-seo-pages"></table>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- CRM -->
+<section class="panel" id="p-crm">
+  <div class="grid g2">
+    <div class="card"><h3>Leads by status</h3>
+      <div class="hint">{crm["leads_total"]:,} leads across 9 tracked owners</div>
+      <div class="chart"><canvas id="c-lstatus"></canvas></div></div>
+    <div class="card"><h3>Leads by source</h3>
+      <div class="hint">Top acquisition sources</div>
+      <div class="chart"><canvas id="c-lsource"></canvas></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Leads by owner</h3>
+      <div class="hint">Distribution across the sales team</div>
+      <div class="chart sm"><canvas id="c-lowner"></canvas></div></div>
+    <div class="card"><h3>Deals by stage</h3>
+      <div class="hint">{crm["deals_total"]} deals · {open_count} still open</div>
+      <div class="chart sm"><canvas id="c-dstage"></canvas></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Pipeline value by stage</h3>
+      <div class="hint">Amounts in Zoho CRM default currency</div>
+      {stage_tbl}</div>
+    <div class="card"><h3>Deals by owner</h3>
+      <div class="hint">Deal count per owner</div>
+      <div class="chart sm"><canvas id="c-downer"></canvas></div></div>
+  </div>
+</section>
 
-    <!-- ADS SECTION -->
-    <div class="tab-content" id="sec-ads">
-        <div class="charts-grid">
-            <div class="chart-card wide">
-                <h3>Google Ads — Campaign Breakdown (Current Month)</h3>
-                <div style="max-height:400px;overflow-y:auto;">
-                    <table class="data-table" id="tbl-campaigns"></table>
-                </div>
-            </div>
-            <div class="chart-card wide">
-                <h3>Monthly Ad Spend (USD)</h3>
-                <canvas id="chart-ads-monthly" height="70"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <!-- CRM SECTION -->
-    <div class="tab-content" id="sec-crm">
-        <div class="charts-grid">
-            <div class="chart-card">
-                <h3>Leads by Status</h3>
-                <canvas id="chart-leads-status" height="200"></canvas>
-            </div>
-            <div class="chart-card">
-                <h3>Leads by Source</h3>
-                <canvas id="chart-leads-source" height="200"></canvas>
-            </div>
-            <div class="chart-card">
-                <h3>Leads by Owner</h3>
-                <canvas id="chart-leads-owner" height="200"></canvas>
-            </div>
-            <div class="chart-card">
-                <h3>Deals by Stage</h3>
-                <canvas id="chart-deals-stage" height="200"></canvas>
-            </div>
-        </div>
-    </div>
+<footer>
+  <span>Knowmax Marketing Dashboard · generated {gen} · all data embedded, no live calls</span>
+  <span>Sources: GA4 property 251430515 · Ahrefs project 1715938 · Google Ads 7735901637 · Zoho CRM · Snov.io</span>
+</footer>
 </div>
 
 <script>
-// ─── DATA ───
-const ga4Monthly = {ga4_monthly};
-const ga4Channels = {ga4_channels};
-const ga4Devices = {ga4_devices};
-const ga4Countries = {ga4_countries};
-const ga4Pages = {ga4_pages};
-const gscHistory = {gsc_history};
-const gscKeywords = {gsc_keywords};
-const gscPages = {gsc_pages};
-const gadsCampaigns = {gads_campaigns};
-const gadsMonthly = {gads_monthly};
-const zohoLeadsStatus = {zoho_leads_status};
-const zohoLeadsSource = {zoho_leads_source};
-const zohoLeadsOwner = {zoho_leads_owner};
-const zohoDealsStage = {zoho_deals_stage};
-const zohoDealsOwner = {zoho_deals_owner};
+const D = {json.dumps(DATA)};
 
-// ─── CHART DEFAULTS ───
-Chart.defaults.color = '#94a3b8';
-Chart.defaults.borderColor = 'rgba(51,65,85,0.5)';
-Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-Chart.defaults.font.size = 11;
+// tabs
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on');
+  document.getElementById('p-'+t.dataset.p).classList.add('on');
+}});
 
-const palette = ['#38bdf8','#22c55e','#f59e0b','#a78bfa','#ef4444','#2dd4bf','#f472b6','#60a5fa','#fb923c','#34d399'];
+const C={{teal:'#2dd4bf',blue:'#60a5fa',amber:'#fbbf24',violet:'#a78bfa',green:'#34d399',
+  red:'#f87171',pink:'#f472b6',orange:'#fb923c',cyan:'#22d3ee',lime:'#a3e635',
+  slate:'#94a3b8',indigo:'#818cf8'}};
+const PAL=[C.teal,C.blue,C.amber,C.violet,C.green,C.pink,C.orange,C.cyan,C.lime,C.indigo,C.red,C.slate];
+Chart.defaults.color='#94a3b8';
+Chart.defaults.font.family="'Plus Jakarta Sans',-apple-system,'Segoe UI',sans-serif";
+Chart.defaults.font.size=11;
+const GRID={{color:'rgba(39,53,79,.7)'}};
+const LEG={{labels:{{boxWidth:10,boxHeight:10,usePointStyle:true,pointStyle:'circle',padding:14}}}};
 
-// ─── Tab Navigation ───
-function showSection(id) {{
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-    document.getElementById('sec-' + id).classList.add('active');
-    event.target.classList.add('active');
+function mlabel(ym){{
+  const y=ym.slice(0,4), m=parseInt(ym.slice(4,6))-1;
+  return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m]+" '"+y.slice(2);
+}}
+function mlabel2(s){{
+  const [y,m]=s.split('-');
+  return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)-1]+" '"+y.slice(2);
 }}
 
-// ─── CHARTS ───
-
-// Monthly sessions/users
-new Chart(document.getElementById('chart-monthly'), {{
-    type: 'line',
-    data: {{
-        labels: ga4Monthly.map(d => d.yearMonth),
-        datasets: [
-            {{ label: 'Sessions', data: ga4Monthly.map(d => parseInt(d.sessions)), borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.1)', fill: true, tension: 0.3 }},
-            {{ label: 'Users', data: ga4Monthly.map(d => parseInt(d.users)), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.3 }},
-            {{ label: 'Pageviews', data: ga4Monthly.map(d => parseInt(d.pageviews)), borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', fill: true, tension: 0.3 }}
-        ]
-    }},
-    options: {{ responsive: true, plugins: {{ legend: {{ position: 'top' }} }}, scales: {{ y: {{ beginAtZero: true }} }} }}
+// 1. Monthly traffic
+new Chart(document.getElementById('c-monthly'),{{
+  data:{{labels:D.ga.monthly.map(r=>mlabel(r.yearMonth)),
+    datasets:[
+      {{type:'bar',label:'Sessions',data:D.ga.monthly.map(r=>r.sessions),
+        backgroundColor:'rgba(45,212,191,.75)',borderRadius:4,order:3}},
+      {{type:'bar',label:'Users',data:D.ga.monthly.map(r=>r.totalUsers),
+        backgroundColor:'rgba(96,165,250,.75)',borderRadius:4,order:3}},
+      {{type:'line',label:'Pageviews',data:D.ga.monthly.map(r=>r.screenPageViews),
+        borderColor:C.amber,backgroundColor:C.amber,tension:.35,pointRadius:3,borderWidth:2,order:1}}
+    ]}},
+  options:{{maintainAspectRatio:false,interaction:{{mode:'index',intersect:false}},
+    plugins:{{legend:LEG}},
+    scales:{{x:{{grid:{{display:false}}}},y:{{grid:GRID,beginAtZero:true,
+      ticks:{{callback:v=>v>=1000?(v/1000)+'k':v}}}}}}}}
 }});
 
-// Channels
-new Chart(document.getElementById('chart-channels'), {{
-    type: 'doughnut',
-    data: {{
-        labels: ga4Channels.map(d => d.channel),
-        datasets: [{{ data: ga4Channels.map(d => parseInt(d.sessions)), backgroundColor: palette }}]
-    }},
-    options: {{ responsive: true, plugins: {{ legend: {{ position: 'right', labels: {{ font: {{ size: 10 }} }} }} }} }}
+// 2. Channels donut
+new Chart(document.getElementById('c-channels'),{{type:'doughnut',
+  data:{{labels:D.ga.channels.map(r=>r.sessionDefaultChannelGroup),
+    datasets:[{{data:D.ga.channels.map(r=>r.sessions),backgroundColor:PAL,
+      borderColor:'#16213b',borderWidth:2}}]}},
+  options:{{maintainAspectRatio:false,cutout:'58%',
+    plugins:{{legend:{{position:'right',...LEG}},
+      tooltip:{{callbacks:{{label:c=>{{
+        const t=c.dataset.data.reduce((a,b)=>a+b,0);
+        return ' '+c.label+': '+c.raw.toLocaleString()+' ('+(c.raw/t*100).toFixed(1)+'%)';}}}}}}}}}}
 }});
 
-// Devices
-new Chart(document.getElementById('chart-devices'), {{
-    type: 'doughnut',
-    data: {{
-        labels: ga4Devices.map(d => d.device),
-        datasets: [{{ data: ga4Devices.map(d => parseInt(d.sessions)), backgroundColor: ['#38bdf8','#22c55e','#f59e0b'] }}]
-    }},
-    options: {{ responsive: true, plugins: {{ legend: {{ position: 'right' }} }} }}
+// 3. Devices donut
+new Chart(document.getElementById('c-devices'),{{type:'doughnut',
+  data:{{labels:D.ga.devices.map(r=>r.deviceCategory),
+    datasets:[{{data:D.ga.devices.map(r=>r.sessions),
+      backgroundColor:[C.teal,C.violet,C.amber,C.pink],borderColor:'#16213b',borderWidth:2}}]}},
+  options:{{maintainAspectRatio:false,cutout:'58%',
+    plugins:{{legend:{{position:'right',...LEG}},
+      tooltip:{{callbacks:{{label:c=>{{
+        const t=c.dataset.data.reduce((a,b)=>a+b,0);
+        return ' '+c.label+': '+c.raw.toLocaleString()+' ('+(c.raw/t*100).toFixed(1)+'%)';}}}}}}}}}}
 }});
 
-// Countries table
-(function() {{
-    let t = '<thead><tr><th>Country</th><th class="num">Sessions</th><th class="num">Users</th></tr></thead><tbody>';
-    ga4Countries.forEach(d => {{ t += `<tr><td>${{d.country}}</td><td class="num">${{Number(d.sessions).toLocaleString()}}</td><td class="num">${{Number(d.users).toLocaleString()}}</td></tr>`; }});
-    t += '</tbody>';
-    document.getElementById('tbl-countries').innerHTML = t;
-}})();
-
-// GA Pages table
-(function() {{
-    let t = '<thead><tr><th>Page</th><th class="num">Views</th><th class="num">Users</th></tr></thead><tbody>';
-    ga4Pages.forEach(d => {{ t += `<tr><td class="url">${{d.page}}</td><td class="num">${{Number(d.pageviews).toLocaleString()}}</td><td class="num">${{Number(d.users).toLocaleString()}}</td></tr>`; }});
-    t += '</tbody>';
-    document.getElementById('tbl-ga-pages').innerHTML = t;
-}})();
-
-// GSC chart
-new Chart(document.getElementById('chart-gsc'), {{
-    type: 'bar',
-    data: {{
-        labels: gscHistory.map(d => d.date),
-        datasets: [
-            {{ label: 'Clicks', data: gscHistory.map(d => d.clicks), backgroundColor: 'rgba(56,189,248,0.7)', yAxisID: 'y' }},
-            {{ label: 'Impressions', data: gscHistory.map(d => d.impressions), type: 'line', borderColor: '#f59e0b', backgroundColor: 'transparent', yAxisID: 'y1', tension: 0.3 }}
-        ]
-    }},
-    options: {{
-        responsive: true,
-        plugins: {{ legend: {{ position: 'top' }} }},
-        scales: {{
-            y: {{ beginAtZero: true, title: {{ display: true, text: 'Clicks' }} }},
-            y1: {{ position: 'right', beginAtZero: true, title: {{ display: true, text: 'Impressions' }}, grid: {{ drawOnChartArea: false }} }}
-        }}
-    }}
+// 4. GSC clicks + impressions
+new Chart(document.getElementById('c-gsc'),{{
+  data:{{labels:D.seo.gsc_monthly.map(r=>mlabel2(r.date)),
+    datasets:[
+      {{type:'bar',label:'Clicks',data:D.seo.gsc_monthly.map(r=>r.clicks),
+        backgroundColor:'rgba(45,212,191,.8)',borderRadius:4,yAxisID:'y'}},
+      {{type:'line',label:'Impressions',data:D.seo.gsc_monthly.map(r=>r.impressions),
+        borderColor:C.violet,backgroundColor:'rgba(167,139,250,.12)',fill:true,
+        tension:.35,pointRadius:3,borderWidth:2,yAxisID:'y1'}}
+    ]}},
+  options:{{maintainAspectRatio:false,interaction:{{mode:'index',intersect:false}},
+    plugins:{{legend:LEG}},
+    scales:{{x:{{grid:{{display:false}}}},
+      y:{{position:'left',grid:GRID,beginAtZero:true,title:{{display:true,text:'Clicks'}},
+        ticks:{{callback:v=>v>=1000?(v/1000)+'k':v}}}},
+      y1:{{position:'right',grid:{{display:false}},beginAtZero:true,
+        title:{{display:true,text:'Impressions'}},
+        ticks:{{callback:v=>v>=1e6?(v/1e6)+'M':(v>=1000?(v/1000)+'k':v)}}}}}}}}
 }});
 
-// Keywords table
-(function() {{
-    let t = '<thead><tr><th>Keyword</th><th class="num">Vol</th><th class="num">Pos</th><th class="num">Traffic</th></tr></thead><tbody>';
-    gscKeywords.forEach(d => {{ t += `<tr><td>${{d.keyword}}</td><td class="num">${{Number(d.volume).toLocaleString()}}</td><td class="num">${{d.position}}</td><td class="num">${{d.traffic}}</td></tr>`; }});
-    t += '</tbody>';
-    document.getElementById('tbl-keywords').innerHTML = t;
-}})();
+// 5. GSC position + CTR
+new Chart(document.getElementById('c-gscpos'),{{
+  data:{{labels:D.seo.gsc_monthly.map(r=>mlabel2(r.date)),
+    datasets:[
+      {{type:'line',label:'Avg position',data:D.seo.gsc_monthly.map(r=>r.position),
+        borderColor:C.amber,backgroundColor:C.amber,tension:.35,pointRadius:3,borderWidth:2,yAxisID:'y'}},
+      {{type:'line',label:'CTR %',data:D.seo.gsc_monthly.map(r=>+(r.ctr*100).toFixed(2)),
+        borderColor:C.green,backgroundColor:C.green,tension:.35,pointRadius:3,borderWidth:2,
+        borderDash:[5,4],yAxisID:'y1'}}
+    ]}},
+  options:{{maintainAspectRatio:false,interaction:{{mode:'index',intersect:false}},
+    plugins:{{legend:LEG}},
+    scales:{{x:{{grid:{{display:false}}}},
+      y:{{position:'left',grid:GRID,reverse:true,title:{{display:true,text:'Avg position'}}}},
+      y1:{{position:'right',grid:{{display:false}},beginAtZero:true,
+        title:{{display:true,text:'CTR %'}}}}}}}}
+}});
 
-// SEO Pages table
-(function() {{
-    let t = '<thead><tr><th>URL</th><th class="num">Traffic</th><th class="num">KWs</th><th>Top Keyword</th></tr></thead><tbody>';
-    gscPages.forEach(d => {{
-        const short = d.url.replace('https://knowmax.ai','');
-        t += `<tr><td class="url" title="${{d.url}}">${{short}}</td><td class="num">${{d.traffic}}</td><td class="num">${{d.keywords}}</td><td>${{d.top_keyword}}</td></tr>`;
-    }});
-    t += '</tbody>';
-    document.getElementById('tbl-seo-pages').innerHTML = t;
-}})();
+// 6. Ads monthly
+new Chart(document.getElementById('c-ads'),{{
+  data:{{labels:D.ads.monthly.map(r=>mlabel2(r.month)),
+    datasets:[
+      {{type:'bar',label:'Spend (USD)',data:D.ads.monthly.map(r=>+r.cost_usd.toFixed(2)),
+        backgroundColor:'rgba(251,191,36,.8)',borderRadius:4,yAxisID:'y'}},
+      {{type:'line',label:'Clicks',data:D.ads.monthly.map(r=>r.clicks),
+        borderColor:C.blue,backgroundColor:C.blue,tension:.35,pointRadius:4,borderWidth:2,yAxisID:'y1'}}
+    ]}},
+  options:{{maintainAspectRatio:false,interaction:{{mode:'index',intersect:false}},
+    plugins:{{legend:LEG}},
+    scales:{{x:{{grid:{{display:false}}}},
+      y:{{position:'left',grid:GRID,beginAtZero:true,title:{{display:true,text:'USD'}}}},
+      y1:{{position:'right',grid:{{display:false}},beginAtZero:true,
+        title:{{display:true,text:'Clicks'}}}}}}}}
+}});
 
-// Campaigns table
-(function() {{
-    let t = '<thead><tr><th>Campaign</th><th>Status</th><th class="num">Spend (USD)</th><th class="num">Clicks</th><th class="num">Impr</th><th class="num">Conv</th></tr></thead><tbody>';
-    gadsCampaigns.forEach(d => {{
-        const statusColor = d.status === 'ENABLED' ? '#22c55e' : '#94a3b8';
-        t += `<tr><td>${{d.name}}</td><td style="color:${{statusColor}}">${{d.status}}</td><td class="num">${{d.spend_usd}}</td><td class="num">${{d.clicks}}</td><td class="num">${{Number(d.impressions).toLocaleString()}}</td><td class="num">${{d.conversions}}</td></tr>`;
-    }});
-    t += '</tbody>';
-    document.getElementById('tbl-campaigns').innerHTML = t;
-}})();
-
-// Ads monthly spend
-if (gadsMonthly.length > 0) {{
-    new Chart(document.getElementById('chart-ads-monthly'), {{
-        type: 'bar',
-        data: {{
-            labels: gadsMonthly.map(d => d.month),
-            datasets: [{{ label: 'Spend (USD)', data: gadsMonthly.map(d => d.spend_usd), backgroundColor: 'rgba(167,139,250,0.7)' }}]
-        }},
-        options: {{ responsive: true, scales: {{ y: {{ beginAtZero: true }} }} }}
-    }});
+// horizontal bar helper
+function hbar(id,labels,values,color,fmt){{
+  new Chart(document.getElementById(id),{{type:'bar',
+    data:{{labels:labels,datasets:[{{data:values,backgroundColor:color,borderRadius:4,
+      barThickness:'flex',maxBarThickness:26}}]}},
+    options:{{indexAxis:'y',maintainAspectRatio:false,
+      plugins:{{legend:{{display:false}},
+        tooltip:{{callbacks:{{label:c=>' '+(fmt?fmt(c.raw):c.raw.toLocaleString())}}}}}},
+      scales:{{x:{{grid:GRID,beginAtZero:true,
+        ticks:{{callback:v=>v>=1000?(v/1000)+'k':v}}}},
+        y:{{grid:{{display:false}}}}}}}}
+  }});
 }}
 
-// CRM Charts
-function barChart(id, dataObj, color) {{
-    const labels = Object.keys(dataObj);
-    const values = Object.values(dataObj);
-    new Chart(document.getElementById(id), {{
-        type: 'bar',
-        data: {{
-            labels: labels,
-            datasets: [{{ data: values.map(v => parseInt(v)), backgroundColor: color, borderRadius: 4 }}]
-        }},
-        options: {{
-            indexAxis: 'y',
-            responsive: true,
-            plugins: {{ legend: {{ display: false }} }},
-            scales: {{ x: {{ beginAtZero: true }} }}
-        }}
-    }});
-}}
-
-barChart('chart-leads-status', zohoLeadsStatus, 'rgba(56,189,248,0.7)');
-barChart('chart-leads-source', zohoLeadsSource, 'rgba(34,197,94,0.7)');
-barChart('chart-leads-owner', zohoLeadsOwner, 'rgba(245,158,11,0.7)');
-barChart('chart-deals-stage', zohoDealsStage, 'rgba(167,139,250,0.7)');
-
+hbar('c-lstatus',D.crm.leads_by_status.map(r=>r[0]),D.crm.leads_by_status.map(r=>r[1]),
+  'rgba(45,212,191,.8)');
+hbar('c-lsource',D.crm.leads_by_source.map(r=>r[0]),D.crm.leads_by_source.map(r=>r[1]),
+  'rgba(96,165,250,.8)');
+hbar('c-lowner',D.crm.leads_by_owner.map(r=>r[0]),D.crm.leads_by_owner.map(r=>r[1]),
+  'rgba(167,139,250,.8)');
+hbar('c-dstage',D.crm.deals_by_stage.map(r=>r.stage),D.crm.deals_by_stage.map(r=>r.count),
+  'rgba(251,191,36,.8)');
+hbar('c-downer',D.crm.deals_by_owner.map(r=>r[0]),D.crm.deals_by_owner.map(r=>r[1]),
+  'rgba(244,114,182,.8)');
 </script>
-</body>
-</html>'''
+</body></html>
+'''
 
-# Write output
-output_path = "Marketing_Dashboard.html"
-with open(output_path, "w") as f:
-    f.write(html)
-
-print(f"✅ Dashboard written to {output_path}")
-print(f"   KPI cards: {len(kpi_cards)}")
-print(f"   Sections: Traffic, SEO & Search, Google Ads, CRM Pipeline")
+open("Marketing_Dashboard.html", "w").write(HTML)
+print("built", len(HTML), "bytes")

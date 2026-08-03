@@ -1,193 +1,427 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Knowmax Marketing Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-:root{--bg:#0f172a;--card:#1e293b;--card2:#243447;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;
---accent:#38bdf8;--green:#4ade80;--red:#f87171;--yellow:#fbbf24;--purple:#a78bfa;--orange:#fb923c}
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;padding:24px}
-h1{font-size:24px;margin-bottom:4px}
-.sub{color:var(--muted);font-size:13px;margin-bottom:24px}
-.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:28px}
-.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
-.kpi .label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
-.kpi .value{font-size:26px;font-weight:700;margin:6px 0 2px}
-.kpi .delta{font-size:12px}
-.up{color:var(--green)}.down{color:var(--red)}.neutral{color:var(--muted)}
-.tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
-.tab{background:var(--card);border:1px solid var(--border);color:var(--muted);padding:10px 20px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600}
-.tab.active{background:var(--accent);color:#0f172a;border-color:var(--accent)}
-.panel{display:none}.panel.active{display:block}
-.row{display:grid;gap:16px;margin-bottom:16px}
-.row.two{grid-template-columns:1fr 1fr}.row.three{grid-template-columns:2fr 1fr 1fr}
-@media(max-width:900px){.row.two,.row.three{grid-template-columns:1fr}}
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px}
-.card h3{font-size:14px;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px}
-.chart-box{position:relative;height:300px}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border);text-transform:uppercase;font-size:11px;letter-spacing:.5px}
-td{padding:8px 10px;border-bottom:1px solid #24334a}
-td.num,th.num{text-align:right}
-tr:hover td{background:var(--card2)}
-a{color:var(--accent);text-decoration:none}
-.note{color:var(--muted);font-size:12px;margin-top:8px;font-style:italic}
-.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;background:var(--card2);color:var(--muted)}
-</style>
-</head>
-<body>
-<h1>Knowmax Marketing Dashboard</h1>
-<div class="sub">Last refreshed: 2026-07-27 &nbsp;|&nbsp; GA4 current month: Jul 1&ndash;27, 2026 vs Jun 2026 &nbsp;|&nbsp; Countries: FY Apr 2025&ndash;Mar 2026</div>
-<div class="kpi-grid" id="kpis"></div>
+:root{
+  --bg:#0f172a; --panel:#16213b; --panel2:#1c2745; --line:#27354f;
+  --txt:#e2e8f0; --mut:#94a3b8; --dim:#64748b;
+  --teal:#2dd4bf; --blue:#60a5fa; --amber:#fbbf24; --violet:#a78bfa;
+  --green:#34d399; --red:#f87171; --pink:#f472b6;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);
+  font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  font-size:14px;line-height:1.5}
+a{color:var(--blue);text-decoration:none} a:hover{text-decoration:underline}
+.wrap{max-width:1400px;margin:0 auto;padding:28px 22px 60px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;
+  gap:14px;margin-bottom:26px;padding-bottom:20px;border-bottom:1px solid var(--line)}
+h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-.5px}
+h1 span{background:linear-gradient(90deg,var(--teal),var(--blue));-webkit-background-clip:text;
+  background-clip:text;color:transparent}
+.sub{color:var(--mut);font-size:13px;margin-top:6px}
+.stamp{background:var(--panel);border:1px solid var(--line);border-radius:9px;
+  padding:8px 14px;font-size:12px;color:var(--mut)}
+.stamp b{color:var(--teal)}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:28px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 15px;
+  position:relative;overflow:hidden}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px}
+.kpi.g-traffic::before{background:var(--teal)}
+.kpi.g-seo::before{background:var(--violet)}
+.kpi.g-ads::before{background:var(--amber)}
+.kpi.g-crm::before{background:var(--blue)}
+.kpi.g-ops::before{background:var(--pink)}
+.kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:.9px;color:var(--mut);font-weight:600}
+.kpi-value{font-size:26px;font-weight:800;margin:6px 0 2px;letter-spacing:-.7px}
+.kpi-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.kpi-sub{font-size:11px;color:var(--dim)}
+.delta{font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;display:inline-flex;
+  align-items:center;gap:5px}
+.delta em{font-style:normal;font-weight:500;opacity:.75;font-size:10px}
+.delta.up{background:rgba(52,211,153,.13);color:var(--green)}
+.delta.down{background:rgba(248,113,113,.13);color:var(--red)}
+.delta.flat{background:rgba(148,163,184,.13);color:var(--mut)}
+
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--line);
+  padding-bottom:0}
+.tab{background:none;border:none;border-bottom:2px solid transparent;color:var(--mut);
+  padding:10px 16px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;
+  border-radius:8px 8px 0 0}
+.tab:hover{color:var(--txt);background:var(--panel)}
+.tab.on{color:var(--teal);border-bottom-color:var(--teal)}
+.panel{display:none} .panel.on{display:block}
+
+.grid{display:grid;gap:14px;margin-bottom:14px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr}
+@media(max-width:900px){.g2,.g3{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.card h3{margin:0 0 4px;font-size:14px;font-weight:700}
+.card .hint{font-size:11.5px;color:var(--dim);margin-bottom:12px}
+.chart{position:relative;height:290px}
+.chart.sm{height:250px}
+.chart.tall{height:360px}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{color:var(--mut);font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;
+  font-weight:700;padding:8px 9px;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody td{padding:8px 9px;border-bottom:1px solid rgba(39,53,79,.55)}
+tbody tr:hover{background:var(--panel2)}
+tbody tr:last-child td{border-bottom:none}
+.scroll{max-height:520px;overflow:auto}
+.scroll::-webkit-scrollbar{width:8px;height:8px}
+.scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+td a{display:inline-block;max-width:420px;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;vertical-align:bottom}
+.pos{display:inline-block;min-width:26px;padding:2px 6px;border-radius:6px;font-weight:700;
+  font-size:11px;background:rgba(148,163,184,.15);color:var(--mut)}
+.pos.p1,.pos.p2,.pos.p3{background:rgba(52,211,153,.15);color:var(--green)}
+.pos.p4,.pos.p5,.pos.p6,.pos.p7,.pos.p8,.pos.p9,.pos.p10{background:rgba(251,191,36,.15);color:var(--amber)}
+.tag{font-size:10.5px;padding:2px 8px;border-radius:20px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.5px;background:rgba(148,163,184,.15);color:var(--mut)}
+.tag.enabled{background:rgba(52,211,153,.15);color:var(--green)}
+.tag.paused{background:rgba(251,191,36,.15);color:var(--amber)}
+.note{background:var(--panel2);border-left:3px solid var(--amber);border-radius:8px;
+  padding:11px 14px;font-size:12.5px;color:var(--mut);margin-bottom:14px}
+footer{margin-top:34px;padding-top:18px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--dim);display:flex;justify-content:space-between;
+  flex-wrap:wrap;gap:10px}
+</style></head><body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>Knowmax <span>Marketing Dashboard</span></h1>
+    <div class="sub">GA4 · Ahrefs &amp; Search Console · Google Ads · Zoho CRM · Snov.io</div>
+  </div>
+  <div class="stamp">Last refreshed <b>03 Aug 2026</b></div>
+</header>
+
+<div class="kpis"><div class="kpi g-traffic">
+      <div class="kpi-label">Sessions</div>
+      <div class="kpi-value">416</div>
+      <div class="kpi-foot"><span class="kpi-sub">Aug 2026 MTD</span><span class="delta down">▼ 57.0%<em>vs Jul 1–3</em></span></div>
+    </div>
+<div class="kpi g-traffic">
+      <div class="kpi-label">Users</div>
+      <div class="kpi-value">407</div>
+      <div class="kpi-foot"><span class="kpi-sub">Aug 2026 MTD</span><span class="delta down">▼ 55.3%<em>vs Jul 1–3</em></span></div>
+    </div>
+<div class="kpi g-traffic">
+      <div class="kpi-label">Pageviews</div>
+      <div class="kpi-value">476</div>
+      <div class="kpi-foot"><span class="kpi-sub">Aug 2026 MTD</span><span class="delta down">▼ 64.2%<em>vs Jul 1–3</em></span></div>
+    </div>
+<div class="kpi g-traffic">
+      <div class="kpi-label">Bounce Rate</div>
+      <div class="kpi-value">49.8%</div>
+      <div class="kpi-foot"><span class="kpi-sub">Aug 2026 MTD</span><span class="delta up">▼ 0.2%<em>vs Jul 1–3</em></span></div>
+    </div>
+<div class="kpi g-seo">
+      <div class="kpi-label">Domain Rating</div>
+      <div class="kpi-value">66</div>
+      <div class="kpi-foot"><span class="kpi-sub">Ahrefs rank 168,780</span></div>
+    </div>
+<div class="kpi g-seo">
+      <div class="kpi-label">Organic Keywords</div>
+      <div class="kpi-value">861</div>
+      <div class="kpi-foot"><span class="kpi-sub">341 in top 3</span></div>
+    </div>
+<div class="kpi g-seo">
+      <div class="kpi-label">Organic Traffic</div>
+      <div class="kpi-value">6,086</div>
+      <div class="kpi-foot"><span class="kpi-sub">≈ $11,997/mo value</span></div>
+    </div>
+<div class="kpi g-ads">
+      <div class="kpi-label">Ad Spend</div>
+      <div class="kpi-value">$0</div>
+      <div class="kpi-foot"><span class="kpi-sub">Jul 2026 · $458 trailing 12m</span></div>
+    </div>
+<div class="kpi g-ads">
+      <div class="kpi-label">Ad Clicks</div>
+      <div class="kpi-value">0</div>
+      <div class="kpi-foot"><span class="kpi-sub">721 trailing 12m</span></div>
+    </div>
+<div class="kpi g-crm">
+      <div class="kpi-label">Total Leads</div>
+      <div class="kpi-value">1,579</div>
+      <div class="kpi-foot"><span class="kpi-sub">9 tracked owners</span></div>
+    </div>
+<div class="kpi g-crm">
+      <div class="kpi-label">Open Pipeline</div>
+      <div class="kpi-value">3.08M</div>
+      <div class="kpi-foot"><span class="kpi-sub">43 open deals</span></div>
+    </div>
+<div class="kpi g-crm">
+      <div class="kpi-label">Won Deals</div>
+      <div class="kpi-value">6</div>
+      <div class="kpi-foot"><span class="kpi-sub">666K won value</span></div>
+    </div>
+<div class="kpi g-ops">
+      <div class="kpi-label">Snov Credits</div>
+      <div class="kpi-value">100,920</div>
+      <div class="kpi-foot"><span class="kpi-sub">balance remaining</span></div>
+    </div></div>
+
 <div class="tabs">
-<div class="tab active" data-p="traffic">Website Traffic</div>
-<div class="tab" data-p="seo">SEO &amp; Search</div>
-<div class="tab" data-p="ads">Google Ads</div>
-<div class="tab" data-p="crm">CRM Pipeline</div>
+  <button class="tab on" data-p="traffic">Website Traffic</button>
+  <button class="tab" data-p="seo">SEO &amp; Search</button>
+  <button class="tab" data-p="ads">Google Ads</button>
+  <button class="tab" data-p="crm">CRM Pipeline</button>
 </div>
 
-<div class="panel active" id="traffic">
-<div class="row"><div class="card"><h3>Monthly Traffic (12 months)</h3><div class="chart-box"><canvas id="trafficChart"></canvas></div></div></div>
-<div class="row two">
-<div class="card"><h3>Channels (Jul 2026)</h3><div class="chart-box"><canvas id="channelChart"></canvas></div></div>
-<div class="card"><h3>Devices (Jul 2026)</h3><div class="chart-box"><canvas id="deviceChart"></canvas></div></div>
-</div>
-<div class="row two">
-<div class="card"><h3>Top 20 Countries (FY Apr 2025&ndash;Mar 2026)</h3><table id="countryTable"></table></div>
-<div class="card"><h3>Top Pages (Jul 2026)</h3><table id="pageTable"></table></div>
-</div>
-</div>
+<!-- TRAFFIC -->
+<section class="panel on" id="p-traffic">
+  <div class="card" style="margin-bottom:14px">
+    <h3>Monthly traffic trend</h3>
+    <div class="hint">Sessions, users and pageviews · Aug 2025 – Aug 2026 (Aug 2026 is month-to-date)</div>
+    <div class="chart tall"><canvas id="c-monthly"></canvas></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Sessions by channel</h3>
+      <div class="hint">Trailing 12 months</div>
+      <div class="chart"><canvas id="c-channels"></canvas></div></div>
+    <div class="card"><h3>Sessions by device</h3>
+      <div class="hint">Trailing 12 months</div>
+      <div class="chart"><canvas id="c-devices"></canvas></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Top 20 countries</h3>
+      <div class="hint">FY 2025–26 scope · Apr 2025 – Mar 2026</div>
+      <div class="scroll"><table><thead><tr><th style="text-align:right">#</th><th style="text-align:left">Country</th><th style="text-align:right">Sessions</th><th style="text-align:right">Users</th><th style="text-align:right">% of total</th></tr></thead><tbody><tr><td style="text-align:right">1</td><td style="text-align:left">India</td><td style="text-align:right">60,714</td><td style="text-align:right">46,409</td><td style="text-align:right">31.1%</td></tr><tr><td style="text-align:right">2</td><td style="text-align:left">United States</td><td style="text-align:right">50,590</td><td style="text-align:right">46,354</td><td style="text-align:right">25.9%</td></tr><tr><td style="text-align:right">3</td><td style="text-align:left">Philippines</td><td style="text-align:right">16,357</td><td style="text-align:right">13,983</td><td style="text-align:right">8.4%</td></tr><tr><td style="text-align:right">4</td><td style="text-align:left">South Africa</td><td style="text-align:right">7,662</td><td style="text-align:right">6,117</td><td style="text-align:right">3.9%</td></tr><tr><td style="text-align:right">5</td><td style="text-align:left">Singapore</td><td style="text-align:right">7,047</td><td style="text-align:right">6,678</td><td style="text-align:right">3.6%</td></tr><tr><td style="text-align:right">6</td><td style="text-align:left">China</td><td style="text-align:right">6,883</td><td style="text-align:right">6,774</td><td style="text-align:right">3.5%</td></tr><tr><td style="text-align:right">7</td><td style="text-align:left">Pakistan</td><td style="text-align:right">5,400</td><td style="text-align:right">4,096</td><td style="text-align:right">2.8%</td></tr><tr><td style="text-align:right">8</td><td style="text-align:left">Indonesia</td><td style="text-align:right">5,033</td><td style="text-align:right">4,568</td><td style="text-align:right">2.6%</td></tr><tr><td style="text-align:right">9</td><td style="text-align:left">United Kingdom</td><td style="text-align:right">4,646</td><td style="text-align:right">4,134</td><td style="text-align:right">2.4%</td></tr><tr><td style="text-align:right">10</td><td style="text-align:left">Canada</td><td style="text-align:right">4,278</td><td style="text-align:right">3,697</td><td style="text-align:right">2.2%</td></tr><tr><td style="text-align:right">11</td><td style="text-align:left">United Arab Emirates</td><td style="text-align:right">3,000</td><td style="text-align:right">2,667</td><td style="text-align:right">1.5%</td></tr><tr><td style="text-align:right">12</td><td style="text-align:left">Australia</td><td style="text-align:right">2,991</td><td style="text-align:right">2,590</td><td style="text-align:right">1.5%</td></tr><tr><td style="text-align:right">13</td><td style="text-align:left">Malaysia</td><td style="text-align:right">2,890</td><td style="text-align:right">2,503</td><td style="text-align:right">1.5%</td></tr><tr><td style="text-align:right">14</td><td style="text-align:left">Nigeria</td><td style="text-align:right">2,751</td><td style="text-align:right">2,345</td><td style="text-align:right">1.4%</td></tr><tr><td style="text-align:right">15</td><td style="text-align:left">Thailand</td><td style="text-align:right">2,592</td><td style="text-align:right">2,333</td><td style="text-align:right">1.3%</td></tr><tr><td style="text-align:right">16</td><td style="text-align:left">Germany</td><td style="text-align:right">2,592</td><td style="text-align:right">2,352</td><td style="text-align:right">1.3%</td></tr><tr><td style="text-align:right">17</td><td style="text-align:left">Egypt</td><td style="text-align:right">2,564</td><td style="text-align:right">2,129</td><td style="text-align:right">1.3%</td></tr><tr><td style="text-align:right">18</td><td style="text-align:left">Mexico</td><td style="text-align:right">2,497</td><td style="text-align:right">2,154</td><td style="text-align:right">1.3%</td></tr><tr><td style="text-align:right">19</td><td style="text-align:left">Vietnam</td><td style="text-align:right">2,271</td><td style="text-align:right">2,033</td><td style="text-align:right">1.2%</td></tr><tr><td style="text-align:right">20</td><td style="text-align:left">Netherlands</td><td style="text-align:right">2,268</td><td style="text-align:right">2,086</td><td style="text-align:right">1.2%</td></tr></tbody></table></div></div>
+    <div class="card"><h3>Top 20 pages</h3>
+      <div class="hint">Trailing 12 months by pageviews</div>
+      <div class="scroll"><table><thead><tr><th style="text-align:right">#</th><th style="text-align:left">Page</th><th style="text-align:right">Pageviews</th><th style="text-align:right">Sessions</th></tr></thead><tbody><tr><td style="text-align:right">1</td><td style="text-align:left"><a href="https://knowmax.ai/" target="_blank">/</a></td><td style="text-align:right">45,592</td><td style="text-align:right">32,044</td></tr><tr><td style="text-align:right">2</td><td style="text-align:left"><a href="https://knowmax.ai/blog/customer-care-scripts/" target="_blank">/blog/customer-care-scripts/</a></td><td style="text-align:right">11,907</td><td style="text-align:right">9,988</td></tr><tr><td style="text-align:right">3</td><td style="text-align:left"><a href="https://knowmax.ai/blog/customer-service-conversations/" target="_blank">/blog/customer-service-conversations/</a></td><td style="text-align:right">7,656</td><td style="text-align:right">6,556</td></tr><tr><td style="text-align:right">4</td><td style="text-align:left"><a href="https://knowmax.ai/blog/data-vs-information-vs-knowledge/" target="_blank">/blog/data-vs-information-vs-knowledge/</a></td><td style="text-align:right">7,638</td><td style="text-align:right">6,289</td></tr><tr><td style="text-align:right">5</td><td style="text-align:left"><a href="https://knowmax.ai/blog/sop-examples-for-customer-service/" target="_blank">/blog/sop-examples-for-customer-service/</a></td><td style="text-align:right">4,098</td><td style="text-align:right">3,687</td></tr><tr><td style="text-align:right">6</td><td style="text-align:left"><a href="https://knowmax.ai/blog/customer-service-responsibilities/" target="_blank">/blog/customer-service-responsibilities/</a></td><td style="text-align:right">3,999</td><td style="text-align:right">3,537</td></tr><tr><td style="text-align:right">7</td><td style="text-align:left"><a href="https://knowmax.ai/contact-us/" target="_blank">/contact-us/</a></td><td style="text-align:right">3,808</td><td style="text-align:right">2,462</td></tr><tr><td style="text-align:right">8</td><td style="text-align:left"><a href="https://knowmax.ai/knowledge-management-platform/" target="_blank">/knowledge-management-platform/</a></td><td style="text-align:right">3,725</td><td style="text-align:right">2,641</td></tr><tr><td style="text-align:right">9</td><td style="text-align:left"><a href="https://knowmax.ai/blog/customer-service-strengths/" target="_blank">/blog/customer-service-strengths/</a></td><td style="text-align:right">3,689</td><td style="text-align:right">3,241</td></tr><tr><td style="text-align:right">10</td><td style="text-align:left"><a href="https://knowmax.ai/blog/ai-knowledge-management-tools/" target="_blank">/blog/ai-knowledge-management-tools/</a></td><td style="text-align:right">3,369</td><td style="text-align:right">2,963</td></tr><tr><td style="text-align:right">11</td><td style="text-align:left"><a href="https://knowmax.ai/blog/knowledge-management-challenges/" target="_blank">/blog/knowledge-management-challenges/</a></td><td style="text-align:right">3,015</td><td style="text-align:right">2,509</td></tr><tr><td style="text-align:right">12</td><td style="text-align:left"><a href="https://knowmax.ai/blog/examples-of-great-customer-service/" target="_blank">/blog/examples-of-great-customer-service/</a></td><td style="text-align:right">2,560</td><td style="text-align:right">2,103</td></tr><tr><td style="text-align:right">13</td><td style="text-align:left"><a href="https://knowmax.ai/case-studies/quick-commerce/" target="_blank">/case-studies/quick-commerce/</a></td><td style="text-align:right">2,373</td><td style="text-align:right">1,858</td></tr><tr><td style="text-align:right">14</td><td style="text-align:left"><a href="https://knowmax.ai/blog/" target="_blank">/blog/</a></td><td style="text-align:right">2,191</td><td style="text-align:right">1,443</td></tr><tr><td style="text-align:right">15</td><td style="text-align:left"><a href="https://knowmax.ai/blog/customer-service-principles/" target="_blank">/blog/customer-service-principles/</a></td><td style="text-align:right">2,038</td><td style="text-align:right">1,665</td></tr><tr><td style="text-align:right">16</td><td style="text-align:left"><a href="https://knowmax.ai/decision-trees/" target="_blank">/decision-trees/</a></td><td style="text-align:right">2,035</td><td style="text-align:right">1,495</td></tr><tr><td style="text-align:right">17</td><td style="text-align:left"><a href="https://knowmax.ai/blog/deal-with-angry-customers/" target="_blank">/blog/deal-with-angry-customers/</a></td><td style="text-align:right">1,886</td><td style="text-align:right">1,685</td></tr><tr><td style="text-align:right">18</td><td style="text-align:left"><a href="https://knowmax.ai/blog/knowledge-management-best-practices/" target="_blank">/blog/knowledge-management-best-practices/</a></td><td style="text-align:right">1,864</td><td style="text-align:right">1,699</td></tr><tr><td style="text-align:right">19</td><td style="text-align:left"><a href="https://knowmax.ai/blog/types-of-knowledge-management/" target="_blank">/blog/types-of-knowledge-management/</a></td><td style="text-align:right">1,791</td><td style="text-align:right">1,541</td></tr><tr><td style="text-align:right">20</td><td style="text-align:left"><a href="https://knowmax.ai/agentic-ai/" target="_blank">/agentic-ai/</a></td><td style="text-align:right">1,646</td><td style="text-align:right">1,131</td></tr></tbody></table></div></div>
+  </div>
+</section>
 
-<div class="panel" id="seo">
-<div class="row"><div class="card"><h3>GSC Clicks &amp; Impressions (monthly)</h3><div class="chart-box"><canvas id="gscChart"></canvas></div></div></div>
-<div class="row two">
-<div class="card"><h3>Top 20 Organic Keywords (Ahrefs)</h3><table id="kwTable"></table></div>
-<div class="card"><h3>Top 20 Pages by Organic Traffic (Ahrefs)</h3><table id="seoPageTable"></table></div>
-</div>
-</div>
+<!-- SEO -->
+<section class="panel" id="p-seo">
+  <div class="card" style="margin-bottom:14px">
+    <h3>Search Console performance</h3>
+    <div class="hint">Monthly clicks (bars) and impressions (line) · knowmax.ai</div>
+    <div class="chart tall"><canvas id="c-gsc"></canvas></div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <h3>Average position &amp; CTR</h3>
+    <div class="hint">Lower position is better</div>
+    <div class="chart sm"><canvas id="c-gscpos"></canvas></div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <h3>Top 20 organic keywords</h3>
+    <div class="hint">Ahrefs · ranked by estimated monthly traffic</div>
+    <div class="scroll"><table><thead><tr><th style="text-align:right">#</th><th style="text-align:left">Keyword</th><th style="text-align:right">Volume</th><th style="text-align:center">Best pos.</th><th style="text-align:right">Traffic</th><th style="text-align:left">URL</th></tr></thead><tbody><tr><td style="text-align:right">1</td><td style="text-align:left">faq</td><td style="text-align:right">20,000</td><td style="text-align:center"><span class="pos p2">2</span></td><td style="text-align:right">823</td><td style="text-align:left"><a href="https://knowmax.ai/blog/faq-page-examples/" target="_blank">/blog/faq-page-examples/</a></td></tr><tr><td style="text-align:right">2</td><td style="text-align:left">knowmax</td><td style="text-align:right">600</td><td style="text-align:center"><span class="pos p1">1</span></td><td style="text-align:right">634</td><td style="text-align:left"><a href="https://knowmax.ai/" target="_blank">/</a></td></tr><tr><td style="text-align:right">3</td><td style="text-align:left">troubleshooting</td><td style="text-align:right">19,000</td><td style="text-align:center"><span class="pos p2">2</span></td><td style="text-align:right">291</td><td style="text-align:left"><a href="https://knowmax.ai/blog/troubleshooting-support/" target="_blank">/blog/troubleshooting-support/</a></td></tr><tr><td style="text-align:right">4</td><td style="text-align:left">km portal</td><td style="text-align:right">3,000</td><td style="text-align:center"><span class="pos p8">8</span></td><td style="text-align:right">103</td><td style="text-align:left"><a href="https://knowmax.ai/blog/knowledge-management-portal/" target="_blank">/blog/knowledge-management-portal/</a></td></tr><tr><td style="text-align:right">5</td><td style="text-align:left">faq</td><td style="text-align:right">4,800</td><td style="text-align:center"><span class="pos p2">2</span></td><td style="text-align:right">85</td><td style="text-align:left"><a href="https://knowmax.ai/blog/faq-page-examples/" target="_blank">/blog/faq-page-examples/</a></td></tr><tr><td style="text-align:right">6</td><td style="text-align:left">customer engagement platform</td><td style="text-align:right">2,400</td><td style="text-align:center"><span class="pos p1">1</span></td><td style="text-align:right">84</td><td style="text-align:left"><a href="https://knowmax.ai/blog/customer-engagement-platform/" target="_blank">/blog/customer-engagement-platform/</a></td></tr><tr><td style="text-align:right">7</td><td style="text-align:left">troubleshoot</td><td style="text-align:right">4,500</td><td style="text-align:center"><span class="pos p2">2</span></td><td style="text-align:right">76</td><td style="text-align:left"><a href="https://knowmax.ai/blog/troubleshooting-support/" target="_blank">/blog/troubleshooting-support/</a></td></tr><tr><td style="text-align:right">8</td><td style="text-align:left">knowmax</td><td style="text-align:right">70</td><td style="text-align:center"><span class="pos p1">1</span></td><td style="text-align:right">68</td><td style="text-align:left"><a href="https://knowmax.ai/" target="_blank">/</a></td></tr><tr><td style="text-align:right">9</td><td style="text-align:left">difference between data information and knowledge</td><td style="text-align:right">100</td><td style="text-align:center"><span class="pos p2">2</span></td><td style="text-align:right">61</td><td style="text-align:left"><a href="https://knowmax.ai/blog/data-vs-information-vs-knowledge/" target="_blank">/blog/data-vs-information-vs-knowledge/</a></td></tr><tr><td style="text-align:right">10</td><td style="text-align:left">customer service resolution</td><td style="text-align:right">150</td><td style="text-align:center"><span class="pos p1">1</span></td><td style="text-align:right">56</td><td style="text-align:left"><a href="https://knowmax.ai/blog/customer-service-resolution/" target="_blank">/blog/customer-service-resolution/</a></td></tr><tr><td style="text-align:right">11</td><td style="text-align:left">customer engagement</td><td style="text-align:right">1,200</td><td style="text-align:center"><span class="pos p2">2</span></td><td style="text-align:right">48</td><td style="text-align:left"><a href="https://knowmax.ai/blog/digital-customer-engagement/" target="_blank">/blog/digital-customer-engagement/</a></td></tr><tr><td style="text-align:right">12</td><td style="text-align:left">data vs information vs knowledge</td><td style="text-align:right">70</td><td style="text-align:center"><span class="pos p2">2</span></td><td style="text-align:right">46</td><td style="text-align:left"><a href="https://knowmax.ai/blog/data-vs-information-vs-knowledge/" target="_blank">/blog/data-vs-information-vs-knowledge/</a></td></tr><tr><td style="text-align:right">13</td><td style="text-align:left">customer satisfaction in bpo</td><td style="text-align:right">100</td><td style="text-align:center"><span class="pos p1">1</span></td><td style="text-align:right">43</td><td style="text-align:left"><a href="https://knowmax.ai/blog/customer-satisfaction-in-bpos/" target="_blank">/blog/customer-satisfaction-in-bpos/</a></td></tr><tr><td style="text-align:right">14</td><td style="text-align:left">what is customer service in call center</td><td style="text-align:right">250</td><td style="text-align:center"><span class="pos p1">1</span></td><td style="text-align:right">40</td><td style="text-align:left"><a href="https://knowmax.ai/blog/customer-service-call-center/" target="_blank">/blog/customer-service-call-center/</a></td></tr><tr><td style="text-align:right">15</td><td style="text-align:left">challenges</td><td style="text-align:right">600</td><td style="text-align:center"><span class="pos p2">2</span></td><td style="text-align:right">38</td><td style="text-align:left"><a href="https://knowmax.ai/blog/knowledge-management-challenges/" target="_blank">/blog/knowledge-management-challenges/</a></td></tr><tr><td style="text-align:right">16</td><td style="text-align:left">role of customer service</td><td style="text-align:right">100</td><td style="text-align:center"><span class="pos p1">1</span></td><td style="text-align:right">36</td><td style="text-align:left"><a href="https://knowmax.ai/blog/customer-service-responsibilities/" target="_blank">/blog/customer-service-responsibilities/</a></td></tr><tr><td style="text-align:right">17</td><td style="text-align:left">conversational ai</td><td style="text-align:right">6,200</td><td style="text-align:center"><span class="pos p6">6</span></td><td style="text-align:right">36</td><td style="text-align:left"><a href="https://knowmax.ai/blog/what-is-conversational-ai/" target="_blank">/blog/what-is-conversational-ai/</a></td></tr><tr><td style="text-align:right">18</td><td style="text-align:left">how to handle angry customer</td><td style="text-align:right">1,500</td><td style="text-align:center"><span class="pos p11">11</span></td><td style="text-align:right">34</td><td style="text-align:left"><a href="https://knowmax.ai/blog/deal-with-angry-customers/" target="_blank">/blog/deal-with-angry-customers/</a></td></tr><tr><td style="text-align:right">19</td><td style="text-align:left">customer service call center</td><td style="text-align:right">90</td><td style="text-align:center"><span class="pos p1">1</span></td><td style="text-align:right">33</td><td style="text-align:left"><a href="https://knowmax.ai/blog/customer-service-call-center/" target="_blank">/blog/customer-service-call-center/</a></td></tr><tr><td style="text-align:right">20</td><td style="text-align:left">legal knowledge management software</td><td style="text-align:right">300</td><td style="text-align:center"><span class="pos p5">5</span></td><td style="text-align:right">32</td><td style="text-align:left"><a href="https://knowmax.ai/blog/legal-knowledge-management-software/" target="_blank">/blog/legal-knowledge-management-software/</a></td></tr></tbody></table></div>
+  </div>
+  <div class="card">
+    <h3>Top 20 organic pages</h3>
+    <div class="hint">Ahrefs · ranked by estimated monthly traffic</div>
+    <div class="scroll"><table><thead><tr><th style="text-align:right">#</th><th style="text-align:left">Page</th><th style="text-align:right">Traffic</th><th style="text-align:right">Keywords</th><th style="text-align:left">Top keyword</th><th style="text-align:center">Pos.</th></tr></thead><tbody><tr><td style="text-align:right">1</td><td style="text-align:left"><a href="https://knowmax.ai/blog/faq-page-examples/" target="_blank">/blog/faq-page-examples/</a></td><td style="text-align:right">1,066</td><td style="text-align:right">7</td><td style="text-align:left">faq</td><td style="text-align:center"><span class="pos p2">2</span></td></tr><tr><td style="text-align:right">2</td><td style="text-align:left"><a href="https://knowmax.ai/" target="_blank">/</a></td><td style="text-align:right">744</td><td style="text-align:right">11</td><td style="text-align:left">knowmax</td><td style="text-align:center"><span class="pos p1">1</span></td></tr><tr><td style="text-align:right">3</td><td style="text-align:left"><a href="https://knowmax.ai/blog/troubleshooting-support/" target="_blank">/blog/troubleshooting-support/</a></td><td style="text-align:right">540</td><td style="text-align:right">5</td><td style="text-align:left">troubleshooting</td><td style="text-align:center"><span class="pos p2">2</span></td></tr><tr><td style="text-align:right">4</td><td style="text-align:left"><a href="https://knowmax.ai/blog/data-vs-information-vs-knowledge/" target="_blank">/blog/data-vs-information-vs-knowledge/</a></td><td style="text-align:right">278</td><td style="text-align:right">36</td><td style="text-align:left">difference between data information and knowledge</td><td style="text-align:center"><span class="pos p2">2</span></td></tr><tr><td style="text-align:right">5</td><td style="text-align:left"><a href="https://knowmax.ai/blog/customer-service-call-center/" target="_blank">/blog/customer-service-call-center/</a></td><td style="text-align:right">223</td><td style="text-align:right">41</td><td style="text-align:left">what is customer service in call center</td><td style="text-align:center"><span class="pos p1">1</span></td></tr><tr><td style="text-align:right">6</td><td style="text-align:left"><a href="https://knowmax.ai/blog/customer-service-conversations/" target="_blank">/blog/customer-service-conversations/</a></td><td style="text-align:right">183</td><td style="text-align:right">48</td><td style="text-align:left">customer service conversation script</td><td style="text-align:center"><span class="pos p5">5</span></td></tr><tr><td style="text-align:right">7</td><td style="text-align:left"><a href="https://knowmax.ai/blog/customer-engagement-platform/" target="_blank">/blog/customer-engagement-platform/</a></td><td style="text-align:right">175</td><td style="text-align:right">3</td><td style="text-align:left">customer engagement platform</td><td style="text-align:center"><span class="pos p1">1</span></td></tr><tr><td style="text-align:right">8</td><td style="text-align:left"><a href="https://knowmax.ai/blog/digital-customer-engagement/" target="_blank">/blog/digital-customer-engagement/</a></td><td style="text-align:right">157</td><td style="text-align:right">8</td><td style="text-align:left">customer engagement</td><td style="text-align:center"><span class="pos p2">2</span></td></tr><tr><td style="text-align:right">9</td><td style="text-align:left"><a href="https://knowmax.ai/blog/customer-care-scripts/" target="_blank">/blog/customer-care-scripts/</a></td><td style="text-align:right">151</td><td style="text-align:right">71</td><td style="text-align:left">call center script in english</td><td style="text-align:center"><span class="pos p1">1</span></td></tr><tr><td style="text-align:right">10</td><td style="text-align:left"><a href="https://knowmax.ai/blog/create-customer-interactions/" target="_blank">/blog/create-customer-interactions/</a></td><td style="text-align:right">134</td><td style="text-align:right">5</td><td style="text-align:left">customer interaction</td><td style="text-align:center"><span class="pos p1">1</span></td></tr><tr><td style="text-align:right">11</td><td style="text-align:left"><a href="https://knowmax.ai/blog/knowledge-management-challenges/" target="_blank">/blog/knowledge-management-challenges/</a></td><td style="text-align:right">126</td><td style="text-align:right">9</td><td style="text-align:left">challenges</td><td style="text-align:center"><span class="pos p2">2</span></td></tr><tr><td style="text-align:right">12</td><td style="text-align:left"><a href="https://knowmax.ai/blog/types-of-knowledge-management/" target="_blank">/blog/types-of-knowledge-management/</a></td><td style="text-align:right">119</td><td style="text-align:right">40</td><td style="text-align:left">types</td><td style="text-align:center"><span class="pos p4">4</span></td></tr><tr><td style="text-align:right">13</td><td style="text-align:left"><a href="https://knowmax.ai/blog/deal-with-angry-customers/" target="_blank">/blog/deal-with-angry-customers/</a></td><td style="text-align:right">117</td><td style="text-align:right">42</td><td style="text-align:left">how to handle angry customer</td><td style="text-align:center"><span class="pos p11">11</span></td></tr><tr><td style="text-align:right">14</td><td style="text-align:left"><a href="https://knowmax.ai/blog/customer-service-responsibilities/" target="_blank">/blog/customer-service-responsibilities/</a></td><td style="text-align:right">117</td><td style="text-align:right">38</td><td style="text-align:left">role of customer service</td><td style="text-align:center"><span class="pos p1">1</span></td></tr><tr><td style="text-align:right">15</td><td style="text-align:left"><a href="https://knowmax.ai/blog/step-by-step-guide/" target="_blank">/blog/step-by-step-guide/</a></td><td style="text-align:right">116</td><td style="text-align:right">11</td><td style="text-align:left">step by step guide</td><td style="text-align:center"><span class="pos p1">1</span></td></tr><tr><td style="text-align:right">16</td><td style="text-align:left"><a href="https://knowmax.ai/blog/create-inbound-call-center-scripting/" target="_blank">/blog/create-inbound-call-center-scripting/</a></td><td style="text-align:right">106</td><td style="text-align:right">19</td><td style="text-align:left">call center script sample</td><td style="text-align:center"><span class="pos p8">8</span></td></tr><tr><td style="text-align:right">17</td><td style="text-align:left"><a href="https://knowmax.ai/blog/knowledge-management-portal/" target="_blank">/blog/knowledge-management-portal/</a></td><td style="text-align:right">103</td><td style="text-align:right">2</td><td style="text-align:left">km portal</td><td style="text-align:center"><span class="pos p8">8</span></td></tr><tr><td style="text-align:right">18</td><td style="text-align:left"><a href="https://knowmax.ai/blog/customer-service-problems/" target="_blank">/blog/customer-service-problems/</a></td><td style="text-align:right">94</td><td style="text-align:right">13</td><td style="text-align:left">customer service problems</td><td style="text-align:center"><span class="pos p1">1</span></td></tr><tr><td style="text-align:right">19</td><td style="text-align:left"><a href="https://knowmax.ai/blog/components-of-knowledge-management/" target="_blank">/blog/components-of-knowledge-management/</a></td><td style="text-align:right">90</td><td style="text-align:right">8</td><td style="text-align:left">key components</td><td style="text-align:center"><span class="pos p2">2</span></td></tr><tr><td style="text-align:right">20</td><td style="text-align:left"><a href="https://knowmax.ai/blog/customer-service-resolution/" target="_blank">/blog/customer-service-resolution/</a></td><td style="text-align:right">60</td><td style="text-align:right">4</td><td style="text-align:left">customer service resolution</td><td style="text-align:center"><span class="pos p1">1</span></td></tr></tbody></table></div>
+  </div>
+</section>
 
-<div class="panel" id="ads">
-<div class="row"><div class="card"><h3>Monthly Ad Spend (USD)</h3><div class="chart-box"><canvas id="spendChart"></canvas></div>
-<div class="note">All campaigns are currently paused &mdash; no spend recorded since December 2025.</div></div></div>
-<div class="row"><div class="card"><h3>Campaigns with Activity (trailing 12 months)</h3><table id="campTable"></table></div></div>
-</div>
+<!-- ADS -->
+<section class="panel" id="p-ads">
+  <div class="note"><b>Heads up:</b> the Google Ads account has recorded no spend, clicks or
+  impressions since December 2025. All paid campaigns are currently paused, so current-month and
+  last-month figures are zero. Figures below cover the trailing 12 months.</div>
+  <div class="card" style="margin-bottom:14px">
+    <h3>Monthly ad spend &amp; clicks</h3>
+    <div class="hint">Cost converted from INR at ₹84.5 = $1</div>
+    <div class="chart"><canvas id="c-ads"></canvas></div>
+  </div>
+  <div class="card">
+    <h3>Campaign breakdown</h3>
+    <div class="hint">Campaigns with delivery in the trailing 12 months</div>
+    <table><thead><tr><th style="text-align:left">Campaign</th><th style="text-align:left">Status</th><th style="text-align:right">Cost (USD)</th><th style="text-align:right">Impressions</th><th style="text-align:right">Clicks</th><th style="text-align:right">CTR</th><th style="text-align:right">CPC</th><th style="text-align:right">Conv.</th></tr></thead><tbody><tr><td style="text-align:left">USA & Canada Ads 2025</td><td style="text-align:left"><span class="tag paused">Paused</span></td><td style="text-align:right">$236.46</td><td style="text-align:right">8,561</td><td style="text-align:right">441</td><td style="text-align:right">5.15%</td><td style="text-align:right">$0.54</td><td style="text-align:right">1</td></tr><tr><td style="text-align:left">Knowmax Remarketing Ads</td><td style="text-align:left"><span class="tag paused">Paused</span></td><td style="text-align:right">$163.68</td><td style="text-align:right">442</td><td style="text-align:right">32</td><td style="text-align:right">7.24%</td><td style="text-align:right">$5.11</td><td style="text-align:right">9</td></tr><tr><td style="text-align:left">ME, SEA, SG & PH Ads 2025</td><td style="text-align:left"><span class="tag paused">Paused</span></td><td style="text-align:right">$57.72</td><td style="text-align:right">2,511</td><td style="text-align:right">248</td><td style="text-align:right">9.88%</td><td style="text-align:right">$0.23</td><td style="text-align:right">3</td></tr></tbody></table>
+  </div>
+</section>
 
-<div class="panel" id="crm">
-<div class="row two">
-<div class="card"><h3>Leads by Status</h3><div class="chart-box"><canvas id="leadStatusChart"></canvas></div></div>
-<div class="card"><h3>Leads by Source</h3><div class="chart-box"><canvas id="leadSourceChart"></canvas></div></div>
-</div>
-<div class="row two">
-<div class="card"><h3>Leads by Owner</h3><div class="chart-box"><canvas id="leadOwnerChart"></canvas></div></div>
-<div class="card"><h3>Deals by Stage (count)</h3><div class="chart-box"><canvas id="dealStageChart"></canvas></div></div>
-</div>
-<div class="row"><div class="card"><h3>Pipeline Value by Stage</h3><div class="chart-box"><canvas id="stageValueChart"></canvas></div></div></div>
+<!-- CRM -->
+<section class="panel" id="p-crm">
+  <div class="grid g2">
+    <div class="card"><h3>Leads by status</h3>
+      <div class="hint">1,579 leads across 9 tracked owners</div>
+      <div class="chart"><canvas id="c-lstatus"></canvas></div></div>
+    <div class="card"><h3>Leads by source</h3>
+      <div class="hint">Top acquisition sources</div>
+      <div class="chart"><canvas id="c-lsource"></canvas></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Leads by owner</h3>
+      <div class="hint">Distribution across the sales team</div>
+      <div class="chart sm"><canvas id="c-lowner"></canvas></div></div>
+    <div class="card"><h3>Deals by stage</h3>
+      <div class="hint">83 deals · 43 still open</div>
+      <div class="chart sm"><canvas id="c-dstage"></canvas></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Pipeline value by stage</h3>
+      <div class="hint">Amounts in Zoho CRM default currency</div>
+      <table><thead><tr><th style="text-align:left">Stage</th><th style="text-align:right">Deals</th><th style="text-align:right">Value</th></tr></thead><tbody><tr><td style="text-align:left">Closed (Dropped)</td><td style="text-align:right">30</td><td style="text-align:right">8,935,693</td></tr><tr><td style="text-align:left">Qualification</td><td style="text-align:right">11</td><td style="text-align:right">469,814</td></tr><tr><td style="text-align:left">Needs Analysis</td><td style="text-align:right">10</td><td style="text-align:right">290,000</td></tr><tr><td style="text-align:left">Proposal/Price Quote</td><td style="text-align:right">9</td><td style="text-align:right">1,862,316</td></tr><tr><td style="text-align:left">Identify Decision Makers</td><td style="text-align:right">7</td><td style="text-align:right">246,000</td></tr><tr><td style="text-align:left">Closed (Won)</td><td style="text-align:right">6</td><td style="text-align:right">666,286</td></tr><tr><td style="text-align:left">Value Proposition</td><td style="text-align:right">4</td><td style="text-align:right">125,000</td></tr><tr><td style="text-align:left">Closed (Lost)</td><td style="text-align:right">4</td><td style="text-align:right">161,500</td></tr><tr><td style="text-align:left">Negotiation/Review</td><td style="text-align:right">2</td><td style="text-align:right">82,800</td></tr></tbody></table></div>
+    <div class="card"><h3>Deals by owner</h3>
+      <div class="hint">Deal count per owner</div>
+      <div class="chart sm"><canvas id="c-downer"></canvas></div></div>
+  </div>
+</section>
+
+<footer>
+  <span>Knowmax Marketing Dashboard · generated 03 Aug 2026 · all data embedded, no live calls</span>
+  <span>Sources: GA4 property 251430515 · Ahrefs project 1715938 · Google Ads 7735901637 · Zoho CRM · Snov.io</span>
+</footer>
 </div>
 
 <script>
-const D = {"generated": "2026-07-27", "kpis": {"sessions": 6904.0, "sessions_mom": -43.4, "users": 6199.0, "users_mom": -44.4, "pageviews": 10002.0, "pageviews_mom": -45.0, "bounce": 48.9, "bounce_mom": 9.1, "dr": 66.0, "org_keywords": 898, "org_traffic": 6937, "ad_spend": 0.0, "ad_clicks": 0, "leads": 1583, "pipeline": 12011623.0, "won_count": 6, "won_value": 666286.0, "snov_credits": 95920.0}, "ga4_trend": [{"month": "202508", "sessions": 23813, "users": 21067, "pageviews": 36167}, {"month": "202509", "sessions": 20063, "users": 16810, "pageviews": 31113}, {"month": "202510", "sessions": 18763, "users": 16153, "pageviews": 27914}, {"month": "202511", "sessions": 18164, "users": 16279, "pageviews": 24364}, {"month": "202512", "sessions": 16841, "users": 15173, "pageviews": 22546}, {"month": "202601", "sessions": 16852, "users": 15267, "pageviews": 35986}, {"month": "202602", "sessions": 11767, "users": 10281, "pageviews": 19720}, {"month": "202603", "sessions": 9722, "users": 8678, "pageviews": 15182}, {"month": "202604", "sessions": 11131, "users": 10208, "pageviews": 15112}, {"month": "202605", "sessions": 8710, "users": 7899, "pageviews": 13592}, {"month": "202606", "sessions": 12202, "users": 11142, "pageviews": 18184}, {"month": "202607", "sessions": 6904, "users": 6199, "pageviews": 10002}], "channels": [{"name": "Direct", "sessions": 3801}, {"name": "Organic Search", "sessions": 2638}, {"name": "Referral", "sessions": 406}, {"name": "Unassigned", "sessions": 121}, {"name": "Organic Social", "sessions": 39}, {"name": "AI Assistant", "sessions": 38}, {"name": "Paid Other", "sessions": 4}], "devices": [{"name": "desktop", "sessions": 5732}, {"name": "mobile", "sessions": 1224}, {"name": "tablet", "sessions": 12}, {"name": "smart tv", "sessions": 1}], "top_pages": [{"path": "/", "views": 2749, "sessions": 2282}, {"path": "/blog/customer-service-conversations/", "views": 305, "sessions": 266}, {"path": "/blog/data-vs-information-vs-knowledge/", "views": 284, "sessions": 249}, {"path": "/blog/examples-of-great-customer-service/", "views": 251, "sessions": 221}, {"path": "/blog/customer-service-strengths/", "views": 137, "sessions": 120}, {"path": "/blog/knowledge-management-best-practices/", "views": 134, "sessions": 132}, {"path": "/knowledge-management-platform/", "views": 132, "sessions": 106}, {"path": "/blog/sop-examples-for-customer-service/", "views": 126, "sessions": 124}, {"path": "/blog/", "views": 123, "sessions": 66}, {"path": "/blog/customer-care-scripts/", "views": 120, "sessions": 101}, {"path": "/blog/knowledge-management-process/", "views": 109, "sessions": 109}, {"path": "/blog/customer-service-responsibilities/", "views": 104, "sessions": 84}, {"path": "/blog/ai-call-center-software/", "views": 99, "sessions": 99}, {"path": "/case-studies/", "views": 92, "sessions": 29}, {"path": "/blog/call-center-operations/", "views": 91, "sessions": 88}, {"path": "/integration/", "views": 86, "sessions": 43}, {"path": "/knowmax/case-studies/", "views": 85, "sessions": 9}, {"path": "/contact-us/", "views": 84, "sessions": 79}, {"path": "/blog/ai-knowledge-management-tools/", "views": 80, "sessions": 78}, {"path": "/agentic-ai/", "views": 69, "sessions": 53}], "countries": [{"country": "India", "sessions": 60714, "users": 46409}, {"country": "United States", "sessions": 50590, "users": 46354}, {"country": "Philippines", "sessions": 16357, "users": 13983}, {"country": "South Africa", "sessions": 7662, "users": 6117}, {"country": "Singapore", "sessions": 7047, "users": 6678}, {"country": "China", "sessions": 6883, "users": 6774}, {"country": "Pakistan", "sessions": 5400, "users": 4096}, {"country": "Indonesia", "sessions": 5033, "users": 4568}, {"country": "United Kingdom", "sessions": 4646, "users": 4134}, {"country": "Canada", "sessions": 4278, "users": 3697}, {"country": "United Arab Emirates", "sessions": 3000, "users": 2667}, {"country": "Australia", "sessions": 2991, "users": 2590}, {"country": "Malaysia", "sessions": 2890, "users": 2503}, {"country": "Nigeria", "sessions": 2751, "users": 2345}, {"country": "Thailand", "sessions": 2592, "users": 2333}, {"country": "Germany", "sessions": 2592, "users": 2352}, {"country": "Egypt", "sessions": 2564, "users": 2129}, {"country": "Mexico", "sessions": 2497, "users": 2154}, {"country": "Vietnam", "sessions": 2271, "users": 2033}, {"country": "Netherlands", "sessions": 2268, "users": 2086}], "gsc": [{"month": "2025-08", "clicks": 14344, "impressions": 16569004, "ctr": 0.0865, "position": 12.97}, {"month": "2025-09", "clicks": 12576, "impressions": 9918352, "ctr": 0.1268, "position": 12.61}, {"month": "2025-10", "clicks": 11015, "impressions": 3254166, "ctr": 0.3384, "position": 12.99}, {"month": "2025-11", "clicks": 9010, "impressions": 2834210, "ctr": 0.3179, "position": 14.27}, {"month": "2025-12", "clicks": 7642, "impressions": 3192615, "ctr": 0.2393, "position": 18.5}, {"month": "2026-01", "clicks": 8341, "impressions": 3379264, "ctr": 0.2468, "position": 19.31}, {"month": "2026-02", "clicks": 3751, "impressions": 4421296, "ctr": 0.0848, "position": 12.78}, {"month": "2026-03", "clicks": 2870, "impressions": 3169537, "ctr": 0.0905, "position": 15.63}, {"month": "2026-04", "clicks": 2345, "impressions": 1404789, "ctr": 0.1669, "position": 22.02}, {"month": "2026-05", "clicks": 1982, "impressions": 1016394, "ctr": 0.195, "position": 29.06}, {"month": "2026-06", "clicks": 2241, "impressions": 1100475, "ctr": 0.2036, "position": 27.24}, {"month": "2026-07", "clicks": 250, "impressions": 121553, "ctr": 0.2056, "position": 25.62}], "keywords": [{"keyword": "faq", "volume": 16000, "best_position": 2, "sum_traffic": 844, "url": "https://knowmax.ai/blog/faq-page-examples/"}, {"keyword": "faq", "volume": 20000, "best_position": 2, "sum_traffic": 823, "url": "https://knowmax.ai/blog/faq-page-examples/"}, {"keyword": "knowmax", "volume": 600, "best_position": 1, "sum_traffic": 634, "url": "https://knowmax.ai/"}, {"keyword": "troubleshooting", "volume": 21000, "best_position": 2, "sum_traffic": 321, "url": "https://knowmax.ai/blog/troubleshooting-support/"}, {"keyword": "challenges", "volume": 25000, "best_position": 2, "sum_traffic": 156, "url": "https://knowmax.ai/blog/knowledge-management-challenges/"}, {"keyword": "faq", "volume": 4800, "best_position": 2, "sum_traffic": 85, "url": "https://knowmax.ai/blog/faq-page-examples/"}, {"keyword": "troubleshoot", "volume": 4500, "best_position": 2, "sum_traffic": 76, "url": "https://knowmax.ai/blog/troubleshooting-support/"}, {"keyword": "interactions", "volume": 6200, "best_position": 3, "sum_traffic": 74, "url": "https://knowmax.ai/blog/create-customer-interactions/"}, {"keyword": "knowmax", "volume": 70, "best_position": 1, "sum_traffic": 68, "url": "https://knowmax.ai/"}, {"keyword": "customer service resolution", "volume": 150, "best_position": 1, "sum_traffic": 56, "url": "https://knowmax.ai/blog/customer-service-resolution/"}, {"keyword": "customer engagement", "volume": 1200, "best_position": 2, "sum_traffic": 48, "url": "https://knowmax.ai/blog/digital-customer-engagement/"}, {"keyword": "data vs information vs knowledge", "volume": 70, "best_position": 2, "sum_traffic": 46, "url": "https://knowmax.ai/blog/data-vs-information-vs-knowledge/"}, {"keyword": "customer satisfaction in bpo", "volume": 100, "best_position": 1, "sum_traffic": 43, "url": "https://knowmax.ai/blog/customer-satisfaction-in-bpos/"}, {"keyword": "challenges", "volume": 600, "best_position": 2, "sum_traffic": 38, "url": "https://knowmax.ai/blog/knowledge-management-challenges/"}, {"keyword": "faq", "volume": 3700, "best_position": 2, "sum_traffic": 36, "url": "https://knowmax.ai/blog/faq-page-examples/"}, {"keyword": "role of customer service", "volume": 100, "best_position": 1, "sum_traffic": 36, "url": "https://knowmax.ai/blog/customer-service-responsibilities/"}, {"keyword": "troubleshooting", "volume": 2900, "best_position": 2, "sum_traffic": 34, "url": "https://knowmax.ai/blog/troubleshooting-support/"}, {"keyword": "how to handle angry customer", "volume": 1500, "best_position": 11, "sum_traffic": 34, "url": "https://knowmax.ai/blog/deal-with-angry-customers/"}, {"keyword": "customer service call center", "volume": 90, "best_position": 1, "sum_traffic": 33, "url": "https://knowmax.ai/blog/customer-service-call-center/"}, {"keyword": "legal knowledge management software", "volume": 300, "best_position": 5, "sum_traffic": 32, "url": "https://knowmax.ai/blog/legal-knowledge-management-software/"}], "seo_pages": [{"url": "https://knowmax.ai/blog/faq-page-examples/", "sum_traffic": 1972, "keywords": 8, "top_keyword": "faq", "top_keyword_best_position": 2}, {"url": "https://knowmax.ai/", "sum_traffic": 743, "keywords": 11, "top_keyword": "knowmax", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/troubleshooting-support/", "sum_traffic": 556, "keywords": 5, "top_keyword": "troubleshooting", "top_keyword_best_position": 2}, {"url": "https://knowmax.ai/blog/knowledge-management-challenges/", "sum_traffic": 343, "keywords": 9, "top_keyword": "challenges", "top_keyword_best_position": 2}, {"url": "https://knowmax.ai/blog/data-vs-information-vs-knowledge/", "sum_traffic": 229, "keywords": 37, "top_keyword": "data vs information vs knowledge", "top_keyword_best_position": 2}, {"url": "https://knowmax.ai/blog/create-customer-interactions/", "sum_traffic": 210, "keywords": 5, "top_keyword": "interactions", "top_keyword_best_position": 3}, {"url": "https://knowmax.ai/blog/customer-service-call-center/", "sum_traffic": 187, "keywords": 43, "top_keyword": "customer service call center", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/customer-service-conversations/", "sum_traffic": 186, "keywords": 49, "top_keyword": "customer service conversation script", "top_keyword_best_position": 5}, {"url": "https://knowmax.ai/blog/customer-care-scripts/", "sum_traffic": 164, "keywords": 70, "top_keyword": "call center script in english", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/digital-customer-engagement/", "sum_traffic": 155, "keywords": 8, "top_keyword": "customer engagement", "top_keyword_best_position": 2}, {"url": "https://knowmax.ai/blog/deal-with-angry-customers/", "sum_traffic": 118, "keywords": 50, "top_keyword": "how to handle angry customer", "top_keyword_best_position": 11}, {"url": "https://knowmax.ai/blog/customer-service-responsibilities/", "sum_traffic": 115, "keywords": 38, "top_keyword": "role of customer service", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/step-by-step-guide/", "sum_traffic": 113, "keywords": 11, "top_keyword": "step by step guide", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/types-of-knowledge-management/", "sum_traffic": 102, "keywords": 44, "top_keyword": "types", "top_keyword_best_position": 6}, {"url": "https://knowmax.ai/blog/customer-service-problems/", "sum_traffic": 102, "keywords": 13, "top_keyword": "customer service problems", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/customer-engagement-platform/", "sum_traffic": 91, "keywords": 3, "top_keyword": "customer engagement platform", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/create-inbound-call-center-scripting/", "sum_traffic": 87, "keywords": 19, "top_keyword": "call center script sample", "top_keyword_best_position": 8}, {"url": "https://knowmax.ai/blog/components-of-knowledge-management/", "sum_traffic": 65, "keywords": 9, "top_keyword": "key components", "top_keyword_best_position": 2}, {"url": "https://knowmax.ai/blog/customer-service-resolution/", "sum_traffic": 60, "keywords": 4, "top_keyword": "customer service resolution", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/sop-examples-for-customer-service/", "sum_traffic": 50, "keywords": 22, "top_keyword": "call center sop", "top_keyword_best_position": 7}], "ads_trend": [{"month": "2025-10-01", "spend_usd": 129.91, "clicks": 207, "impressions": 2885}, {"month": "2025-11-01", "spend_usd": 279.75, "clicks": 506, "impressions": 8467}, {"month": "2025-12-01", "spend_usd": 48.19, "clicks": 8, "impressions": 162}], "campaigns": [{"name": "USA & Canada Ads 2025", "status": "PAUSED", "spend_usd": 236.46, "clicks": 441, "impressions": 8561, "conversions": 1.0}, {"name": "Knowmax Remarketing Ads", "status": "PAUSED", "spend_usd": 163.68, "clicks": 32, "impressions": 442, "conversions": 9.0}, {"name": "ME, SEA, SG & PH Ads 2025", "status": "PAUSED", "spend_usd": 57.72, "clicks": 248, "impressions": 2511, "conversions": 3.0}], "leads_status": {"New": 1505, "Contacted": 34, "Unknown": 31, "Not Relevant": 7, "In Process": 3, "Pre-Qualified": 1, "Not Interested": 1, "Junk Lead": 1}, "leads_source": {"Website/Digital": 1077, "Web - Enquiry": 388, "Dripify": 63, "Calendly Meeting": 30, "Web - Brochure Download": 7, "MS Booking": 7, "Unknown": 5, "Partner / Alliances": 3, "Calendly": 1, "Chat": 1, "Inside Sales": 1}, "leads_owner": {"Team Knowmax": 494, "Pratik Salia": 396, "Rahul Dhanak": 363, "Rishu Kapoor": 185, "Alan Palacios": 145}, "deals_stage": {"Closed (Dropped)": 30, "Qualification": 11, "Needs Analysis": 10, "Proposal/Price Quote": 9, "Identify Decision Makers": 7, "Closed (Won)": 6, "Value Proposition": 4, "Closed (Lost)": 4, "Negotiation/Review": 2}, "stage_values": {"Proposal/Price Quote": 1862316.0, "Closed (Dropped)": 8935693.0, "Qualification": 469814.0, "Identify Decision Makers": 246000.0, "Value Proposition": 125000.0, "Needs Analysis": 290000.0, "Closed (Lost)": 161500.0, "Negotiation/Review": 82800.0, "Closed (Won)": 666286.0}};
-Chart.defaults.color = '#94a3b8';
-Chart.defaults.borderColor = '#334155';
-Chart.defaults.font.family = "'Segoe UI',system-ui,sans-serif";
-const PALETTE = ['#38bdf8','#4ade80','#fbbf24','#a78bfa','#fb923c','#f87171','#2dd4bf','#e879f9','#a3e635','#fca5a5','#7dd3fc','#fde047'];
-const fmt = n => n >= 1e6 ? (n/1e6).toFixed(2)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'K' : (typeof n === 'number' ? n.toLocaleString() : n);
-const money = n => '$' + Number(n).toLocaleString(undefined, {maximumFractionDigits: 0});
+const D = {"generated": "03 Aug 2026", "ga": {"current_month": [{"sessions": 416.0, "totalUsers": 407.0, "screenPageViews": 476.0, "bounceRate": 0.49759615384615385}], "last_month": [{"sessions": 8811.0, "totalUsers": 7937.0, "screenPageViews": 12778.0, "bounceRate": 0.46521393712404946}], "monthly": [{"yearMonth": "202508", "sessions": 23813.0, "totalUsers": 21067.0, "screenPageViews": 36167.0, "bounceRate": 0.3267123000041994}, {"yearMonth": "202509", "sessions": 20063.0, "totalUsers": 16810.0, "screenPageViews": 31113.0, "bounceRate": 0.34959876389373473}, {"yearMonth": "202510", "sessions": 18763.0, "totalUsers": 16153.0, "screenPageViews": 27914.0, "bounceRate": 0.3663593242018867}, {"yearMonth": "202511", "sessions": 18164.0, "totalUsers": 16279.0, "screenPageViews": 24364.0, "bounceRate": 0.38901123100638624}, {"yearMonth": "202512", "sessions": 16841.0, "totalUsers": 15173.0, "screenPageViews": 22546.0, "bounceRate": 0.407220473843596}, {"yearMonth": "202601", "sessions": 16852.0, "totalUsers": 15267.0, "screenPageViews": 35986.0, "bounceRate": 0.4055305008307619}, {"yearMonth": "202602", "sessions": 11767.0, "totalUsers": 10281.0, "screenPageViews": 19720.0, "bounceRate": 0.43324551712416076}, {"yearMonth": "202603", "sessions": 9722.0, "totalUsers": 8678.0, "screenPageViews": 15182.0, "bounceRate": 0.44198724542275253}, {"yearMonth": "202604", "sessions": 11131.0, "totalUsers": 10208.0, "screenPageViews": 15112.0, "bounceRate": 0.4703081484143383}, {"yearMonth": "202605", "sessions": 8710.0, "totalUsers": 7899.0, "screenPageViews": 13592.0, "bounceRate": 0.3934557979334099}, {"yearMonth": "202606", "sessions": 12202.0, "totalUsers": 11142.0, "screenPageViews": 18184.0, "bounceRate": 0.4483691198164235}, {"yearMonth": "202607", "sessions": 8811.0, "totalUsers": 7937.0, "screenPageViews": 12778.0, "bounceRate": 0.46521393712404946}, {"yearMonth": "202608", "sessions": 416.0, "totalUsers": 407.0, "screenPageViews": 476.0, "bounceRate": 0.49759615384615385}], "channels": [{"sessionDefaultChannelGroup": "Organic Search", "sessions": 83199.0}, {"sessionDefaultChannelGroup": "Direct", "sessions": 72765.0}, {"sessionDefaultChannelGroup": "Referral", "sessions": 11530.0}, {"sessionDefaultChannelGroup": "Unassigned", "sessions": 4670.0}, {"sessionDefaultChannelGroup": "Email", "sessions": 1734.0}, {"sessionDefaultChannelGroup": "Organic Social", "sessions": 876.0}, {"sessionDefaultChannelGroup": "Paid Search", "sessions": 563.0}, {"sessionDefaultChannelGroup": "AI Assistant", "sessions": 92.0}, {"sessionDefaultChannelGroup": "Display", "sessions": 63.0}, {"sessionDefaultChannelGroup": "Organic Shopping", "sessions": 63.0}, {"sessionDefaultChannelGroup": "Paid Other", "sessions": 49.0}, {"sessionDefaultChannelGroup": "Cross-network", "sessions": 10.0}, {"sessionDefaultChannelGroup": "Organic Video", "sessions": 5.0}], "devices": [{"deviceCategory": "desktop", "sessions": 134502.0}, {"deviceCategory": "mobile", "sessions": 41870.0}, {"deviceCategory": "tablet", "sessions": 899.0}, {"deviceCategory": "smart tv", "sessions": 15.0}], "top_pages": [{"pagePath": "/", "screenPageViews": 45592.0, "sessions": 32044.0}, {"pagePath": "/blog/customer-care-scripts/", "screenPageViews": 11907.0, "sessions": 9988.0}, {"pagePath": "/blog/customer-service-conversations/", "screenPageViews": 7656.0, "sessions": 6556.0}, {"pagePath": "/blog/data-vs-information-vs-knowledge/", "screenPageViews": 7638.0, "sessions": 6289.0}, {"pagePath": "/blog/sop-examples-for-customer-service/", "screenPageViews": 4098.0, "sessions": 3687.0}, {"pagePath": "/blog/customer-service-responsibilities/", "screenPageViews": 3999.0, "sessions": 3537.0}, {"pagePath": "/contact-us/", "screenPageViews": 3808.0, "sessions": 2462.0}, {"pagePath": "/knowledge-management-platform/", "screenPageViews": 3725.0, "sessions": 2641.0}, {"pagePath": "/blog/customer-service-strengths/", "screenPageViews": 3689.0, "sessions": 3241.0}, {"pagePath": "/blog/ai-knowledge-management-tools/", "screenPageViews": 3369.0, "sessions": 2963.0}, {"pagePath": "/blog/knowledge-management-challenges/", "screenPageViews": 3015.0, "sessions": 2509.0}, {"pagePath": "/blog/examples-of-great-customer-service/", "screenPageViews": 2560.0, "sessions": 2103.0}, {"pagePath": "/case-studies/quick-commerce/", "screenPageViews": 2373.0, "sessions": 1858.0}, {"pagePath": "/blog/", "screenPageViews": 2191.0, "sessions": 1443.0}, {"pagePath": "/blog/customer-service-principles/", "screenPageViews": 2038.0, "sessions": 1665.0}, {"pagePath": "/decision-trees/", "screenPageViews": 2035.0, "sessions": 1495.0}, {"pagePath": "/blog/deal-with-angry-customers/", "screenPageViews": 1886.0, "sessions": 1685.0}, {"pagePath": "/blog/knowledge-management-best-practices/", "screenPageViews": 1864.0, "sessions": 1699.0}, {"pagePath": "/blog/types-of-knowledge-management/", "screenPageViews": 1791.0, "sessions": 1541.0}, {"pagePath": "/agentic-ai/", "screenPageViews": 1646.0, "sessions": 1131.0}], "countries_fy": [{"country": "India", "sessions": 60714.0, "totalUsers": 46409.0}, {"country": "United States", "sessions": 50590.0, "totalUsers": 46354.0}, {"country": "Philippines", "sessions": 16357.0, "totalUsers": 13983.0}, {"country": "South Africa", "sessions": 7662.0, "totalUsers": 6117.0}, {"country": "Singapore", "sessions": 7047.0, "totalUsers": 6678.0}, {"country": "China", "sessions": 6883.0, "totalUsers": 6774.0}, {"country": "Pakistan", "sessions": 5400.0, "totalUsers": 4096.0}, {"country": "Indonesia", "sessions": 5033.0, "totalUsers": 4568.0}, {"country": "United Kingdom", "sessions": 4646.0, "totalUsers": 4134.0}, {"country": "Canada", "sessions": 4278.0, "totalUsers": 3697.0}, {"country": "United Arab Emirates", "sessions": 3000.0, "totalUsers": 2667.0}, {"country": "Australia", "sessions": 2991.0, "totalUsers": 2590.0}, {"country": "Malaysia", "sessions": 2890.0, "totalUsers": 2503.0}, {"country": "Nigeria", "sessions": 2751.0, "totalUsers": 2345.0}, {"country": "Thailand", "sessions": 2592.0, "totalUsers": 2333.0}, {"country": "Germany", "sessions": 2592.0, "totalUsers": 2352.0}, {"country": "Egypt", "sessions": 2564.0, "totalUsers": 2129.0}, {"country": "Mexico", "sessions": 2497.0, "totalUsers": 2154.0}, {"country": "Vietnam", "sessions": 2271.0, "totalUsers": 2033.0}, {"country": "Netherlands", "sessions": 2268.0, "totalUsers": 2086.0}], "last_month_same_period": [{"sessions": 967.0, "totalUsers": 911.0, "screenPageViews": 1331.0, "bounceRate": 0.4984488107549121}]}, "ads": {"monthly": [{"month": "2025-10", "cost_usd": 129.9121755739645, "clicks": 207, "impressions": 2885, "conversions": 1.0}, {"month": "2025-11", "cost_usd": 279.7479310650888, "clicks": 506, "impressions": 8467, "conversions": 12.0}, {"month": "2025-12", "cost_usd": 48.19207100591716, "clicks": 8, "impressions": 162, "conversions": 0.0}], "current_month": {"cost_usd": 0.0, "clicks": 0, "impressions": 0, "conversions": 0.0}, "last_month": {"cost_usd": 0.0, "clicks": 0, "impressions": 0, "conversions": 0.0}, "campaigns": [{"campaign": "USA & Canada Ads 2025", "status": "PAUSED", "cost_usd": 236.45757831952665, "clicks": 441, "impressions": 8561, "conversions": 1.0}, {"campaign": "Knowmax Remarketing Ads", "status": "PAUSED", "cost_usd": 163.6788464852071, "clicks": 32, "impressions": 442, "conversions": 9.0}, {"campaign": "ME, SEA, SG & PH Ads 2025", "status": "PAUSED", "cost_usd": 57.71575284023668, "clicks": 248, "impressions": 2511, "conversions": 3.0}]}, "crm": {"leads_total": 1579, "leads_by_status": [["New", 1500], ["Contacted", 34], ["Unspecified", 32], ["Not Relevant", 7], ["In Process", 3], ["Pre-Qualified", 1], ["Not Interested", 1], ["Junk Lead", 1]], "leads_by_source": [["Website/Digital", 1084], ["Web - Enquiry", 376], ["Dripify", 63], ["Calendly Meeting", 31], ["Web - Brochure Download", 7], ["MS Booking", 7], ["Unspecified", 5], ["Partner / Alliances", 3], ["Calendly", 1], ["Chat", 1], ["Inside Sales", 1]], "leads_by_owner": [["Team Knowmax", 501], ["Pratik Salia", 384], ["Rahul Dhanak", 363], ["Rishu Kapoor", 186], ["Alan Palacios", 145]], "deals_total": 83, "deals_by_stage": [{"stage": "Closed (Dropped)", "count": 30, "value": 8935693.0}, {"stage": "Qualification", "count": 11, "value": 469814.0}, {"stage": "Needs Analysis", "count": 10, "value": 290000.0}, {"stage": "Proposal/Price Quote", "count": 9, "value": 1862316.0}, {"stage": "Identify Decision Makers", "count": 7, "value": 246000.0}, {"stage": "Closed (Won)", "count": 6, "value": 666286.0}, {"stage": "Value Proposition", "count": 4, "value": 125000.0}, {"stage": "Closed (Lost)", "count": 4, "value": 161500.0}, {"stage": "Negotiation/Review", "count": 2, "value": 82800.0}], "deals_by_owner": [["Rahul Dhanak", 72], ["Pratik Salia", 9], ["Alan Palacios", 2]], "pipeline_value": 12011623.0, "won_count": 6, "won_value": 666286.0, "total_deal_value": 12839409.0, "snov": {"success": true, "data": {"balance": "100920.00", "teamwork": true, "unique_recipients_used": 0, "limit_resets_in": 23, "expires_in": 23}}}, "seo": {"domain_rating": 66.0, "ahrefs_rank": 168780, "org_keywords": 861, "org_keywords_1_3": 341, "org_traffic": 6086, "org_traffic_value_usd": 11997.16, "gsc_monthly": [{"date": "2025-07", "clicks": 16505, "impressions": 8236723, "ctr": 0.2003, "position": 19.18}, {"date": "2025-08", "clicks": 14344, "impressions": 16569004, "ctr": 0.0865, "position": 12.97}, {"date": "2025-09", "clicks": 12576, "impressions": 9918352, "ctr": 0.1268, "position": 12.61}, {"date": "2025-10", "clicks": 11015, "impressions": 3254166, "ctr": 0.3384, "position": 12.99}, {"date": "2025-11", "clicks": 9010, "impressions": 2834210, "ctr": 0.3179, "position": 14.27}, {"date": "2025-12", "clicks": 7642, "impressions": 3192615, "ctr": 0.2393, "position": 18.5}, {"date": "2026-01", "clicks": 8341, "impressions": 3379264, "ctr": 0.2468, "position": 19.31}, {"date": "2026-02", "clicks": 3751, "impressions": 4421296, "ctr": 0.0848, "position": 12.78}, {"date": "2026-03", "clicks": 2870, "impressions": 3169537, "ctr": 0.0905, "position": 15.63}, {"date": "2026-04", "clicks": 2345, "impressions": 1404789, "ctr": 0.1669, "position": 22.02}, {"date": "2026-05", "clicks": 1982, "impressions": 1016394, "ctr": 0.195, "position": 29.06}, {"date": "2026-06", "clicks": 2241, "impressions": 1100475, "ctr": 0.2036, "position": 27.24}, {"date": "2026-07", "clicks": 723, "impressions": 418377, "ctr": 0.1728, "position": 25.01}], "top_keywords": [{"keyword": "faq", "volume": 20000, "best_position": 2, "sum_traffic": 823, "url": "https://knowmax.ai/blog/faq-page-examples/"}, {"keyword": "knowmax", "volume": 600, "best_position": 1, "sum_traffic": 634, "url": "https://knowmax.ai/"}, {"keyword": "troubleshooting", "volume": 19000, "best_position": 2, "sum_traffic": 291, "url": "https://knowmax.ai/blog/troubleshooting-support/"}, {"keyword": "km portal", "volume": 3000, "best_position": 8, "sum_traffic": 103, "url": "https://knowmax.ai/blog/knowledge-management-portal/"}, {"keyword": "faq", "volume": 4800, "best_position": 2, "sum_traffic": 85, "url": "https://knowmax.ai/blog/faq-page-examples/"}, {"keyword": "customer engagement platform", "volume": 2400, "best_position": 1, "sum_traffic": 84, "url": "https://knowmax.ai/blog/customer-engagement-platform/"}, {"keyword": "troubleshoot", "volume": 4500, "best_position": 2, "sum_traffic": 76, "url": "https://knowmax.ai/blog/troubleshooting-support/"}, {"keyword": "knowmax", "volume": 70, "best_position": 1, "sum_traffic": 68, "url": "https://knowmax.ai/"}, {"keyword": "difference between data information and knowledge", "volume": 100, "best_position": 2, "sum_traffic": 61, "url": "https://knowmax.ai/blog/data-vs-information-vs-knowledge/"}, {"keyword": "customer service resolution", "volume": 150, "best_position": 1, "sum_traffic": 56, "url": "https://knowmax.ai/blog/customer-service-resolution/"}, {"keyword": "customer engagement", "volume": 1200, "best_position": 2, "sum_traffic": 48, "url": "https://knowmax.ai/blog/digital-customer-engagement/"}, {"keyword": "data vs information vs knowledge", "volume": 70, "best_position": 2, "sum_traffic": 46, "url": "https://knowmax.ai/blog/data-vs-information-vs-knowledge/"}, {"keyword": "customer satisfaction in bpo", "volume": 100, "best_position": 1, "sum_traffic": 43, "url": "https://knowmax.ai/blog/customer-satisfaction-in-bpos/"}, {"keyword": "what is customer service in call center", "volume": 250, "best_position": 1, "sum_traffic": 40, "url": "https://knowmax.ai/blog/customer-service-call-center/"}, {"keyword": "challenges", "volume": 600, "best_position": 2, "sum_traffic": 38, "url": "https://knowmax.ai/blog/knowledge-management-challenges/"}, {"keyword": "role of customer service", "volume": 100, "best_position": 1, "sum_traffic": 36, "url": "https://knowmax.ai/blog/customer-service-responsibilities/"}, {"keyword": "conversational ai", "volume": 6200, "best_position": 6, "sum_traffic": 36, "url": "https://knowmax.ai/blog/what-is-conversational-ai/"}, {"keyword": "how to handle angry customer", "volume": 1500, "best_position": 11, "sum_traffic": 34, "url": "https://knowmax.ai/blog/deal-with-angry-customers/"}, {"keyword": "customer service call center", "volume": 90, "best_position": 1, "sum_traffic": 33, "url": "https://knowmax.ai/blog/customer-service-call-center/"}, {"keyword": "legal knowledge management software", "volume": 300, "best_position": 5, "sum_traffic": 32, "url": "https://knowmax.ai/blog/legal-knowledge-management-software/"}], "top_pages": [{"url": "https://knowmax.ai/blog/faq-page-examples/", "sum_traffic": 1066, "keywords": 7, "top_keyword": "faq", "top_keyword_best_position": 2}, {"url": "https://knowmax.ai/", "sum_traffic": 744, "keywords": 11, "top_keyword": "knowmax", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/troubleshooting-support/", "sum_traffic": 540, "keywords": 5, "top_keyword": "troubleshooting", "top_keyword_best_position": 2}, {"url": "https://knowmax.ai/blog/data-vs-information-vs-knowledge/", "sum_traffic": 278, "keywords": 36, "top_keyword": "difference between data information and knowledge", "top_keyword_best_position": 2}, {"url": "https://knowmax.ai/blog/customer-service-call-center/", "sum_traffic": 223, "keywords": 41, "top_keyword": "what is customer service in call center", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/customer-service-conversations/", "sum_traffic": 183, "keywords": 48, "top_keyword": "customer service conversation script", "top_keyword_best_position": 5}, {"url": "https://knowmax.ai/blog/customer-engagement-platform/", "sum_traffic": 175, "keywords": 3, "top_keyword": "customer engagement platform", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/digital-customer-engagement/", "sum_traffic": 157, "keywords": 8, "top_keyword": "customer engagement", "top_keyword_best_position": 2}, {"url": "https://knowmax.ai/blog/customer-care-scripts/", "sum_traffic": 151, "keywords": 71, "top_keyword": "call center script in english", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/create-customer-interactions/", "sum_traffic": 134, "keywords": 5, "top_keyword": "customer interaction", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/knowledge-management-challenges/", "sum_traffic": 126, "keywords": 9, "top_keyword": "challenges", "top_keyword_best_position": 2}, {"url": "https://knowmax.ai/blog/types-of-knowledge-management/", "sum_traffic": 119, "keywords": 40, "top_keyword": "types", "top_keyword_best_position": 4}, {"url": "https://knowmax.ai/blog/deal-with-angry-customers/", "sum_traffic": 117, "keywords": 42, "top_keyword": "how to handle angry customer", "top_keyword_best_position": 11}, {"url": "https://knowmax.ai/blog/customer-service-responsibilities/", "sum_traffic": 117, "keywords": 38, "top_keyword": "role of customer service", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/step-by-step-guide/", "sum_traffic": 116, "keywords": 11, "top_keyword": "step by step guide", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/create-inbound-call-center-scripting/", "sum_traffic": 106, "keywords": 19, "top_keyword": "call center script sample", "top_keyword_best_position": 8}, {"url": "https://knowmax.ai/blog/knowledge-management-portal/", "sum_traffic": 103, "keywords": 2, "top_keyword": "km portal", "top_keyword_best_position": 8}, {"url": "https://knowmax.ai/blog/customer-service-problems/", "sum_traffic": 94, "keywords": 13, "top_keyword": "customer service problems", "top_keyword_best_position": 1}, {"url": "https://knowmax.ai/blog/components-of-knowledge-management/", "sum_traffic": 90, "keywords": 8, "top_keyword": "key components", "top_keyword_best_position": 2}, {"url": "https://knowmax.ai/blog/customer-service-resolution/", "sum_traffic": 60, "keywords": 4, "top_keyword": "customer service resolution", "top_keyword_best_position": 1}]}, "open_pipeline": 3075930.0, "open_count": 43, "gsc_last": {"date": "2026-07", "clicks": 723, "impressions": 418377, "ctr": 0.1728, "position": 25.01}};
 
-// ---- KPI cards ----
-const k = D.kpis;
-const kpiDefs = [
-  ['Sessions', fmt(k.sessions), k.sessions_mom, false],
-  ['Users', fmt(k.users), k.users_mom, false],
-  ['Pageviews', fmt(k.pageviews), k.pageviews_mom, false],
-  ['Bounce Rate', k.bounce + '%', k.bounce_mom, true],
-  ['Domain Rating', k.dr, null],
-  ['Organic Keywords', fmt(k.org_keywords), null],
-  ['Organic Traffic /mo', fmt(k.org_traffic), null],
-  ['Ad Spend (Jul)', money(k.ad_spend), null],
-  ['Ad Clicks (Jul)', fmt(k.ad_clicks), null],
-  ['Total Leads', fmt(k.leads), null],
-  ['Pipeline Value', money(k.pipeline), null],
-  ['Won Deals', k.won_count + ' (' + money(k.won_value) + ')', null],
-  ['Snov Credits', fmt(k.snov_credits), null],
-];
-document.getElementById('kpis').innerHTML = kpiDefs.map(([label, val, momv, invert]) => {
-  let delta = '';
-  if (momv !== null && momv !== undefined) {
-    const good = invert ? momv <= 0 : momv >= 0;
-    delta = `<div class="delta ${good ? 'up' : 'down'}">${momv > 0 ? '▲' : momv < 0 ? '▼' : '•'} ${Math.abs(momv)}% MoM</div>`;
-  }
-  return `<div class="kpi"><div class="label">${label}</div><div class="value">${val}</div>${delta}</div>`;
-}).join('');
+// tabs
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on');
+  document.getElementById('p-'+t.dataset.p).classList.add('on');
+});
 
-// ---- Tabs ----
-document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
-  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
-  t.classList.add('active');
-  document.getElementById(t.dataset.p).classList.add('active');
-}));
+const C={teal:'#2dd4bf',blue:'#60a5fa',amber:'#fbbf24',violet:'#a78bfa',green:'#34d399',
+  red:'#f87171',pink:'#f472b6',orange:'#fb923c',cyan:'#22d3ee',lime:'#a3e635',
+  slate:'#94a3b8',indigo:'#818cf8'};
+const PAL=[C.teal,C.blue,C.amber,C.violet,C.green,C.pink,C.orange,C.cyan,C.lime,C.indigo,C.red,C.slate];
+Chart.defaults.color='#94a3b8';
+Chart.defaults.font.family="'Plus Jakarta Sans',-apple-system,'Segoe UI',sans-serif";
+Chart.defaults.font.size=11;
+const GRID={color:'rgba(39,53,79,.7)'};
+const LEG={labels:{boxWidth:10,boxHeight:10,usePointStyle:true,pointStyle:'circle',padding:14}};
 
-const ym = s => { const [y, mo] = [s.slice(0,4), s.slice(4,6) || s.slice(5,7)];
-  return ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mo] + ' ' + y.slice(2); };
+function mlabel(ym){
+  const y=ym.slice(0,4), m=parseInt(ym.slice(4,6))-1;
+  return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m]+" '"+y.slice(2);
+}
+function mlabel2(s){
+  const [y,m]=s.split('-');
+  return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)-1]+" '"+y.slice(2);
+}
 
-// ---- Traffic chart ----
-new Chart(trafficChart, {data: {
-  labels: D.ga4_trend.map(r => ym(r.month)),
-  datasets: [
-    {type: 'bar', label: 'Sessions', data: D.ga4_trend.map(r => r.sessions), backgroundColor: '#38bdf8aa', borderRadius: 4},
-    {type: 'bar', label: 'Users', data: D.ga4_trend.map(r => r.users), backgroundColor: '#a78bfaaa', borderRadius: 4},
-    {type: 'line', label: 'Pageviews', data: D.ga4_trend.map(r => r.pageviews), borderColor: '#fbbf24', tension: .3, pointRadius: 3}
-  ]}, options: {maintainAspectRatio: false}});
+// 1. Monthly traffic
+new Chart(document.getElementById('c-monthly'),{
+  data:{labels:D.ga.monthly.map(r=>mlabel(r.yearMonth)),
+    datasets:[
+      {type:'bar',label:'Sessions',data:D.ga.monthly.map(r=>r.sessions),
+        backgroundColor:'rgba(45,212,191,.75)',borderRadius:4,order:3},
+      {type:'bar',label:'Users',data:D.ga.monthly.map(r=>r.totalUsers),
+        backgroundColor:'rgba(96,165,250,.75)',borderRadius:4,order:3},
+      {type:'line',label:'Pageviews',data:D.ga.monthly.map(r=>r.screenPageViews),
+        borderColor:C.amber,backgroundColor:C.amber,tension:.35,pointRadius:3,borderWidth:2,order:1}
+    ]},
+  options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:LEG},
+    scales:{x:{grid:{display:false}},y:{grid:GRID,beginAtZero:true,
+      ticks:{callback:v=>v>=1000?(v/1000)+'k':v}}}}
+});
 
-const donut = (el, entries) => new Chart(el, {type: 'doughnut',
-  data: {labels: entries.map(e => e.name), datasets: [{data: entries.map(e => e.sessions), backgroundColor: PALETTE, borderColor: '#1e293b', borderWidth: 2}]},
-  options: {maintainAspectRatio: false, plugins: {legend: {position: 'right'}}}});
-donut(channelChart, D.channels);
-donut(deviceChart, D.devices);
+// 2. Channels donut
+new Chart(document.getElementById('c-channels'),{type:'doughnut',
+  data:{labels:D.ga.channels.map(r=>r.sessionDefaultChannelGroup),
+    datasets:[{data:D.ga.channels.map(r=>r.sessions),backgroundColor:PAL,
+      borderColor:'#16213b',borderWidth:2}]},
+  options:{maintainAspectRatio:false,cutout:'58%',
+    plugins:{legend:{position:'right',...LEG},
+      tooltip:{callbacks:{label:c=>{
+        const t=c.dataset.data.reduce((a,b)=>a+b,0);
+        return ' '+c.label+': '+c.raw.toLocaleString()+' ('+(c.raw/t*100).toFixed(1)+'%)';}}}}}
+});
 
-const table = (el, head, rows) => document.getElementById(el).innerHTML =
-  '<tr>' + head.map((h, i) => `<th class="${i ? 'num' : ''}">${h}</th>`).join('') + '</tr>' +
-  rows.map(r => '<tr>' + r.map((c, i) => `<td class="${i ? 'num' : ''}">${c}</td>`).join('') + '</tr>').join('');
+// 3. Devices donut
+new Chart(document.getElementById('c-devices'),{type:'doughnut',
+  data:{labels:D.ga.devices.map(r=>r.deviceCategory),
+    datasets:[{data:D.ga.devices.map(r=>r.sessions),
+      backgroundColor:[C.teal,C.violet,C.amber,C.pink],borderColor:'#16213b',borderWidth:2}]},
+  options:{maintainAspectRatio:false,cutout:'58%',
+    plugins:{legend:{position:'right',...LEG},
+      tooltip:{callbacks:{label:c=>{
+        const t=c.dataset.data.reduce((a,b)=>a+b,0);
+        return ' '+c.label+': '+c.raw.toLocaleString()+' ('+(c.raw/t*100).toFixed(1)+'%)';}}}}}
+});
 
-table('countryTable', ['Country', 'Sessions', 'Users'], D.countries.map(c => [c.country, fmt(c.sessions), fmt(c.users)]));
-table('pageTable', ['Page', 'Views', 'Sessions'], D.top_pages.map(p => [p.path.length > 45 ? p.path.slice(0, 45) + '…' : p.path, fmt(p.views), fmt(p.sessions)]));
+// 4. GSC clicks + impressions
+new Chart(document.getElementById('c-gsc'),{
+  data:{labels:D.seo.gsc_monthly.map(r=>mlabel2(r.date)),
+    datasets:[
+      {type:'bar',label:'Clicks',data:D.seo.gsc_monthly.map(r=>r.clicks),
+        backgroundColor:'rgba(45,212,191,.8)',borderRadius:4,yAxisID:'y'},
+      {type:'line',label:'Impressions',data:D.seo.gsc_monthly.map(r=>r.impressions),
+        borderColor:C.violet,backgroundColor:'rgba(167,139,250,.12)',fill:true,
+        tension:.35,pointRadius:3,borderWidth:2,yAxisID:'y1'}
+    ]},
+  options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:LEG},
+    scales:{x:{grid:{display:false}},
+      y:{position:'left',grid:GRID,beginAtZero:true,title:{display:true,text:'Clicks'},
+        ticks:{callback:v=>v>=1000?(v/1000)+'k':v}},
+      y1:{position:'right',grid:{display:false},beginAtZero:true,
+        title:{display:true,text:'Impressions'},
+        ticks:{callback:v=>v>=1e6?(v/1e6)+'M':(v>=1000?(v/1000)+'k':v)}}}}
+});
 
-// ---- GSC chart ----
-new Chart(gscChart, {data: {
-  labels: D.gsc.map(r => ym(r.month.replace('-', ''))),
-  datasets: [
-    {type: 'bar', label: 'Clicks', data: D.gsc.map(r => r.clicks), backgroundColor: '#4ade80aa', borderRadius: 4, yAxisID: 'y'},
-    {type: 'line', label: 'Impressions', data: D.gsc.map(r => r.impressions), borderColor: '#38bdf8', tension: .3, yAxisID: 'y1', pointRadius: 3}
-  ]}, options: {maintainAspectRatio: false, scales: {y: {position: 'left', title: {display: true, text: 'Clicks'}}, y1: {position: 'right', grid: {drawOnChartArea: false}, title: {display: true, text: 'Impressions'}}}}});
+// 5. GSC position + CTR
+new Chart(document.getElementById('c-gscpos'),{
+  data:{labels:D.seo.gsc_monthly.map(r=>mlabel2(r.date)),
+    datasets:[
+      {type:'line',label:'Avg position',data:D.seo.gsc_monthly.map(r=>r.position),
+        borderColor:C.amber,backgroundColor:C.amber,tension:.35,pointRadius:3,borderWidth:2,yAxisID:'y'},
+      {type:'line',label:'CTR %',data:D.seo.gsc_monthly.map(r=>+(r.ctr*100).toFixed(2)),
+        borderColor:C.green,backgroundColor:C.green,tension:.35,pointRadius:3,borderWidth:2,
+        borderDash:[5,4],yAxisID:'y1'}
+    ]},
+  options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:LEG},
+    scales:{x:{grid:{display:false}},
+      y:{position:'left',grid:GRID,reverse:true,title:{display:true,text:'Avg position'}},
+      y1:{position:'right',grid:{display:false},beginAtZero:true,
+        title:{display:true,text:'CTR %'}}}}
+});
 
-const short = u => u.replace('https://knowmax.ai', '') || '/';
-table('kwTable', ['Keyword', 'Volume', 'Pos', 'Traffic'], D.keywords.map(kw => [kw.keyword, fmt(kw.volume), kw.best_position, fmt(kw.sum_traffic)]));
-table('seoPageTable', ['Page', 'Traffic', 'KWs', 'Top KW (pos)'], D.seo_pages.map(p => [`<a href="${p.url}" target="_blank">${short(p.url).slice(0, 40)}</a>`, fmt(p.sum_traffic), p.keywords, `${p.top_keyword} (${p.top_keyword_best_position})`]));
+// 6. Ads monthly
+new Chart(document.getElementById('c-ads'),{
+  data:{labels:D.ads.monthly.map(r=>mlabel2(r.month)),
+    datasets:[
+      {type:'bar',label:'Spend (USD)',data:D.ads.monthly.map(r=>+r.cost_usd.toFixed(2)),
+        backgroundColor:'rgba(251,191,36,.8)',borderRadius:4,yAxisID:'y'},
+      {type:'line',label:'Clicks',data:D.ads.monthly.map(r=>r.clicks),
+        borderColor:C.blue,backgroundColor:C.blue,tension:.35,pointRadius:4,borderWidth:2,yAxisID:'y1'}
+    ]},
+  options:{maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:LEG},
+    scales:{x:{grid:{display:false}},
+      y:{position:'left',grid:GRID,beginAtZero:true,title:{display:true,text:'USD'}},
+      y1:{position:'right',grid:{display:false},beginAtZero:true,
+        title:{display:true,text:'Clicks'}}}}
+});
 
-// ---- Ads ----
-new Chart(spendChart, {type: 'bar', data: {
-  labels: D.ads_trend.map(r => ym(r.month.slice(0, 7).replace('-', ''))),
-  datasets: [{label: 'Spend (USD)', data: D.ads_trend.map(r => r.spend_usd), backgroundColor: '#fb923caa', borderRadius: 4}]},
-  options: {maintainAspectRatio: false}});
-table('campTable', ['Campaign', 'Status', 'Spend', 'Clicks', 'Impr.', 'Conv.'],
-  D.campaigns.map(c => [c.name, `<span class="badge">${c.status}</span>`, money(c.spend_usd), fmt(c.clicks), fmt(c.impressions), c.conversions]));
+// horizontal bar helper
+function hbar(id,labels,values,color,fmt){
+  new Chart(document.getElementById(id),{type:'bar',
+    data:{labels:labels,datasets:[{data:values,backgroundColor:color,borderRadius:4,
+      barThickness:'flex',maxBarThickness:26}]},
+    options:{indexAxis:'y',maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>' '+(fmt?fmt(c.raw):c.raw.toLocaleString())}}},
+      scales:{x:{grid:GRID,beginAtZero:true,
+        ticks:{callback:v=>v>=1000?(v/1000)+'k':v}},
+        y:{grid:{display:false}}}}
+  });
+}
 
-// ---- CRM horizontal bars ----
-const hbar = (el, obj, color, isMoney) => {
-  const entries = Object.entries(obj).slice(0, 12);
-  new Chart(el, {type: 'bar', data: {labels: entries.map(e => e[0]),
-    datasets: [{data: entries.map(e => e[1]), backgroundColor: color, borderRadius: 4}]},
-    options: {indexAxis: 'y', maintainAspectRatio: false, plugins: {legend: {display: false},
-      tooltip: {callbacks: {label: c => isMoney ? money(c.raw) : fmt(c.raw)}}}}});
-};
-hbar(leadStatusChart, D.leads_status, '#38bdf8');
-hbar(leadSourceChart, D.leads_source, '#4ade80');
-hbar(leadOwnerChart, D.leads_owner, '#a78bfa');
-hbar(dealStageChart, D.deals_stage, '#fbbf24');
-hbar(stageValueChart, D.stage_values, '#fb923c', true);
+hbar('c-lstatus',D.crm.leads_by_status.map(r=>r[0]),D.crm.leads_by_status.map(r=>r[1]),
+  'rgba(45,212,191,.8)');
+hbar('c-lsource',D.crm.leads_by_source.map(r=>r[0]),D.crm.leads_by_source.map(r=>r[1]),
+  'rgba(96,165,250,.8)');
+hbar('c-lowner',D.crm.leads_by_owner.map(r=>r[0]),D.crm.leads_by_owner.map(r=>r[1]),
+  'rgba(167,139,250,.8)');
+hbar('c-dstage',D.crm.deals_by_stage.map(r=>r.stage),D.crm.deals_by_stage.map(r=>r.count),
+  'rgba(251,191,36,.8)');
+hbar('c-downer',D.crm.deals_by_owner.map(r=>r[0]),D.crm.deals_by_owner.map(r=>r[1]),
+  'rgba(244,114,182,.8)');
 </script>
-</body>
-</html>
+</body></html>
